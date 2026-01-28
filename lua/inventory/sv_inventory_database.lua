@@ -8,7 +8,7 @@
 function CreateTable()
     sql.Query("CREATE TABLE IF NOT EXISTS player_data (SteamID TEXT PRIMARY KEY, Faction TEXT)")
     sql.Query("CREATE TABLE IF NOT EXISTS item_data (Item_ID TEXT, Item_Name TEXT, Size INTEGER, Color_HEX VARCHAR(7), Ammo INTEGER, PRIMARY KEY (Item_ID))")
-    sql.Query("CREATE TABLE IF NOT EXISTS player_inventory (SteamID TEXT, Item_ID TEXT, Amount INTEGER, PRIMARY KEY (SteamID, Item_ID))")
+    sql.Query("CREATE TABLE IF NOT EXISTS player_inventory (SteamID TEXT, Item_ID TEXT, Amount INTEGER,Active INTEGER, PRIMARY KEY (SteamID, Item_ID))")
 end
 
 function ReadTable()
@@ -39,7 +39,6 @@ function CreatePlayer(player, faction)
 end
 
 function ReadPlayer(player)
-    print("Reading player with SteamID: " .. player:SteamID())
     local result = sql.Query("SELECT * FROM player_data WHERE SteamID = '" .. player:SteamID() .. "'")
     if(not result) then
         ErrorNoHalt("No player found with SteamID: " .. player:SteamID() .. "\n")
@@ -72,6 +71,7 @@ function CreateItem(itemID, itemName, size, colorHex, ammo)
     end
 
     sql.Query("INSERT INTO item_data (Item_ID, Item_Name, Size, Color_HEX, Ammo) VALUES ('" .. itemID .. "', '" .. itemName .. "', " .. size .. ", '" .. colorHex .. "', " .. ammo .. ")")
+    ErrorNoHalt("  => Creating Item with ID: " .. itemID .. ".\n")
 end
 
 function ReadItem(itemID)
@@ -112,16 +112,20 @@ function createInventoryEntry(player, itemID, amount)
     end
     local inventoryResult = readInventoryEntry(player, itemID)
     if(inventoryResult) then
-        updateInventoryEntry(player, itemID, amount + tonumber(inventoryResult[1].Amount))
-        print("Updated existing inventory entry for SteamID: " .. player:SteamID() .. " and Item_ID: " .. itemID .. " to amount: " .. (amount + tonumber(inventoryResult[1].Amount)) .. "\n")
+        print(amount + tonumber(inventoryResult[1].Amount))
+        updateInventoryEntry(player, itemID, amount + tonumber(inventoryResult[1].Amount),nil)
         return
     end
-    sql.Query("INSERT INTO player_inventory (SteamID, Item_ID, Amount) VALUES ('" .. player:SteamID() .. "', '" .. itemID .. "', " .. amount .. ")")
-    SyncPlayerInventory(player)
+    sql.Query("INSERT INTO player_inventory (SteamID, Item_ID, Amount, Active) VALUES ('" .. player:SteamID() .. "', '" .. itemID .. "', " .. amount .. ", 0)")
+    
+
 
 end
 function readInventory(player)
     local result = sql.Query("SELECT * FROM player_inventory WHERE SteamID = '" .. player:SteamID() .. "'")
+    for _, row in ipairs(result) do
+        row.Active = tonumber(row.Active) == 1
+    end
     if(not result) then
         ErrorNoHalt("No inventory entry found for SteamID: " .. player:SteamID() .. "\n")
         return {}
@@ -129,31 +133,47 @@ function readInventory(player)
     return result
 end
 function readInventoryEntry(player, itemID)
-    print("Reading inventory entry for SteamID: " .. player:SteamID() .. " and Item_ID: " .. itemID)
     local result = sql.Query("SELECT * FROM player_inventory WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
     if(not result) then
         ErrorNoHalt("No inventory entry found for SteamID: " .. player:SteamID() .. " and Item_ID: " .. itemID .. "\n")
         return nil
     end
+        ErrorNoHalt("Inventory entry found for SteamID: " .. player:SteamID() .. " and Item_ID: " .. itemID .. "\n")
     return result
 end
 function updateInventory(player, inventory)
     for k, v in pairs(inventory) do
-        updateInventoryEntry(player, v.Item_ID, v.Amount)
+        updateInventoryEntry(player, v.Item_ID, v.Amount, v.Active)
     end
     SyncPlayerInventory(player)
 end
-function updateInventoryEntry(player, itemID, amount)
+function updateInventoryEntry(player, itemID, amount, active)
     local result = readInventoryEntry(player, itemID)
-    if amount <= 0 then
-        amount = 1
+    if not result then return end
+
+
+    if amount == nil then
+        amount = tonumber(result.Amount)
     end
-    if(not result) then
-        return
+
+    if active == nil then
+        active = tonumber(result.Active) == 1
     end
-    sql.Query("UPDATE player_inventory SET Amount = " .. amount .. " WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
-    SyncPlayerInventory(player)
+
+    local activeValue = active and 1 or 0
+
+    print(player,itemID,amount,activeValue,result)
+    sql.Query(string.format(
+        "UPDATE player_inventory SET Amount = %d, Active = %d WHERE SteamID = '%s' AND Item_ID = '%s';",
+        amount,
+        activeValue,
+        player:SteamID(),
+        itemID
+    ))
+
 end
+
+
 function deleteInventoryEntry(player, itemID, amount)
     local result = readInventoryEntry(player, itemID)
     if(not result) then

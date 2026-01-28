@@ -19,7 +19,8 @@ INVENTORY.GUI.PASSIVE = INVENTORY.GUI.PASSIVE or nil
 INVENTORY.GUI.ACTIVE = INVENTORY.GUI.ACTIVE or { 
     TOP = nil,
     BOTTOM = nil,
-    LEFT = nil
+    LEFT = nil,
+    MODEL = nil,
 }
 INVENTORY.SETTINGS = {
     SCREEN = {
@@ -46,13 +47,20 @@ INVENTORY.THEME = {
 INVENTORY.ITEMS = INVENTORY.ITEMS or {}
 
 AddCSLuaFile("cl_inventory_drop_event.lua")
+
+local function HexToRGB(hex)
+    hex = hex:gsub("#", "")
+
+    local r = tonumber(hex:sub(1, 2), 16)
+    local g = tonumber(hex:sub(3, 4), 16)
+    local b = tonumber(hex:sub(5, 6), 16)
+
+    return r, g, b
+end
+
 function changeSizes(toPut, x, y, PickedUpItem)
     local t = 1
     local i = 0
-    for k, v in pairs(toPut:GetParent():GetChildren()) do
-        if v == toPut then break end
-        i = i + 1
-    end
 
     local allDropIns = PickedUpItem:GetParent():GetParent():GetChildren()
     if #allDropIns == InvX * InvY then
@@ -76,23 +84,29 @@ function changeSizes(toPut, x, y, PickedUpItem)
         end
         -- end
     end
-
-    if #toPut:GetParent():GetChildren() == InvX * InvY then
-        if x == 1 and y == 1 then
-        elseif x == 2 and y == 1 then
-            toPut:GetParent():GetChild(i + 1):SetSize(0, 0)
-        elseif x == 1 and y == 2 then
-            toPut:GetParent():GetChild(i + InvX):SetSize(0, 0)
-        elseif x == 2 and y == 2 then
-            toPut:GetParent():GetChild(i + 1):SetSize(0, 0)
-            toPut:GetParent():GetChild(i + InvX):SetSize(0, 0)
-            toPut:GetParent():GetChild(i + InvX + 1):SetSize(0, 0)
+    if toPut then
+        for k, v in pairs(toPut:GetParent():GetChildren()) do
+            if v == toPut then break end
+            i = i + 1
         end
+        if #toPut:GetParent():GetChildren() == InvX * InvY then
+            if x == 1 and y == 1 then
+            elseif x == 2 and y == 1 then
+                toPut:GetParent():GetChild(i + 1):SetSize(0, 0)
+            elseif x == 1 and y == 2 then
+                toPut:GetParent():GetChild(i + InvX):SetSize(0, 0)
+            elseif x == 2 and y == 2 then
+                toPut:GetParent():GetChild(i + 1):SetSize(0, 0)
+                toPut:GetParent():GetChild(i + InvX):SetSize(0, 0)
+                toPut:GetParent():GetChild(i + InvX + 1):SetSize(0, 0)
+            end
 
-        toPut:SetSize(BoxSize * x, BoxSize * y)
+            toPut:SetSize(BoxSize * x, BoxSize * y)
+        end
     end
 end
 function CreateInventory()
+    MsgC(Color(255,0,0),"____________________CREATING INVENTORY_________________\n")
     INVENTORY.GUI.MAIN = vgui.Create("DPanel")
     INVENTORY.GUI.MAIN:SetSize(winw, winh)
     INVENTORY.GUI.MAIN:Center()
@@ -124,6 +138,11 @@ function CreateInventory()
     INVENTORY.GUI.PASSIVE:GetVBar():SetWide(10)
     INVENTORY.GUI.PASSIVE:Dock(FILL)
     INVENTORY.GUI.PASSIVE:SetName("InventoryPassivePanel")
+    INVENTORY.GUI.PASSIVE.Paint = function(self, w, h)
+        surface.DrawRect(0, 0, w, h)
+        surface.SetDrawColor(255, 255, 255)
+        surface.DrawOutlinedRect(0, 0, w, h, 2)
+    end
     for i = 1, INVENTORY.SETTINGS.TABLE.HEIGHT do
         for j = 1, INVENTORY.SETTINGS.TABLE.WIDTH do
             local DropPanel = vgui.Create("DPanel")
@@ -142,11 +161,16 @@ function CreateInventory()
     end
     local sidePanel = vgui.Create("DPanel", INVENTORY.GUI.MAIN)
     sidePanel:SetSize(winw * 0.42, 0)
-    sidePanel:SetBackgroundColor(Color(50, 50, 50, 150))
     sidePanel:Dock(LEFT)
-    local model = vgui.Create("DModelPanel", sidePanel)
-    model:SetModel("models/player/alyx.mdl")
-    model:Dock(FILL)
+    sidePanel.Paint = function(self, w, h)
+        surface.SetDrawColor(50, 50, 50, 150)
+        surface.DrawRect(0, 0, w, h)
+        surface.SetDrawColor(255, 255, 255)
+        surface.DrawOutlinedRect(0, 0, w, h, 2)
+    end
+    INVENTORY.GUI.ACTIVE.MODEL = vgui.Create("DModelPanel", sidePanel)
+    INVENTORY.GUI.ACTIVE.MODEL:SetModel("models/player/skeleton.mdl")
+    INVENTORY.GUI.ACTIVE.MODEL:Dock(FILL)
     local rightBar = vgui.Create("DPanel", sidePanel)
     rightBar:SetSize(BoxSize * .5, 0)
     rightBar:Dock(RIGHT)
@@ -155,136 +179,60 @@ function CreateInventory()
     INVENTORY.GUI.ACTIVE.BOTTOM:SetSize(0, BoxSize * 2.5)
     INVENTORY.GUI.ACTIVE.BOTTOM:Dock(BOTTOM)
     INVENTORY.GUI.ACTIVE.BOTTOM:SetBackgroundColor(Color(0, 0, 0, 0))
-    local dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize * 2, BoxSize * 2)
-    dropContainer:SetPos(BoxSize / 4, BoxSize / 4)
-    dropContainer:Receiver("2x2", DropEvent2x2)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    INVENTORY.GUI.ACTIVE.BOTTOM:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize * 2, BoxSize * 2)
-    dropContainer:SetPos(BoxSize * 2 + BoxSize / 2, BoxSize / 4)
-    dropContainer:Receiver("2x2", DropEvent2x2)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    INVENTORY.GUI.ACTIVE.BOTTOM:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize * 2, BoxSize * 2)
-    dropContainer:SetPos(BoxSize * 4 + BoxSize * 3 / 4, BoxSize / 4)
-    dropContainer:Receiver("2x2", DropEvent2x2)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    INVENTORY.GUI.ACTIVE.BOTTOM:Add(dropContainer)
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(2,2,BoxSize * 2 + 3*BoxSize / 4, BoxSize / 8))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize / 4 , 0,true))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize / 4 , BoxSize + BoxSize/4,true))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize * 1 + BoxSize / 2, 0,true))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize * 1 + BoxSize / 2, BoxSize + BoxSize/4,true))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize * 5 , 0,true))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize * 5, BoxSize + BoxSize/4,true))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize * 6 + BoxSize / 4, 0,true))
+    INVENTORY.GUI.ACTIVE.BOTTOM:Add(createContainer(1,1,BoxSize * 6 + BoxSize / 4, BoxSize + BoxSize/4,true))
     INVENTORY.GUI.ACTIVE.TOP = vgui.Create("DPanel", sidePanel)
     INVENTORY.GUI.ACTIVE.TOP:SetSize(0, BoxSize * 1.5)
     INVENTORY.GUI.ACTIVE.TOP:Dock(TOP)
     INVENTORY.GUI.ACTIVE.TOP:SetBackgroundColor(Color(0, 0, 0, 0))
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize, BoxSize)
-    dropContainer:SetPos(BoxSize / 4, BoxSize / 4)
-    dropContainer:Receiver("1x1", DropEvent1x1)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    INVENTORY.GUI.ACTIVE.TOP:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize, BoxSize)
-    dropContainer:SetPos(BoxSize + BoxSize / 2, BoxSize / 4)
-    dropContainer:Receiver("1x1", DropEvent1x1)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    INVENTORY.GUI.ACTIVE.TOP:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize, BoxSize)
-    dropContainer:SetPos(BoxSize * 2 + BoxSize * 3 / 4, BoxSize / 4)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    dropContainer:Receiver("1x1", DropEvent1x1)
-    INVENTORY.GUI.ACTIVE.TOP:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize, BoxSize)
-    dropContainer:SetPos(BoxSize * 4, BoxSize / 4)
-    dropContainer:Receiver("1x1", DropEvent1x1)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    INVENTORY.GUI.ACTIVE.TOP:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize * 2, BoxSize)
-    dropContainer:SetPos(BoxSize * 5 + BoxSize / 4, BoxSize / 4)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    dropContainer:Receiver("2x1", DropEvent2x1)
-    INVENTORY.GUI.ACTIVE.TOP:Add(dropContainer)
+    INVENTORY.GUI.ACTIVE.TOP:Add(createContainer(1,1,BoxSize / 4, BoxSize / 4))
+    INVENTORY.GUI.ACTIVE.TOP:Add(createContainer(1,1,BoxSize + BoxSize / 2, BoxSize / 4))
+    INVENTORY.GUI.ACTIVE.TOP:Add(createContainer(1,1,BoxSize * 2 + BoxSize * 3 / 4, BoxSize / 4))
+    INVENTORY.GUI.ACTIVE.TOP:Add(createContainer(1,1,BoxSize * 4, BoxSize / 4))
+    INVENTORY.GUI.ACTIVE.TOP:Add(createContainer(2,1,BoxSize * 5 + BoxSize / 4, BoxSize / 4))
     INVENTORY.GUI.ACTIVE.LEFT = vgui.Create("DPanel", sidePanel)
     INVENTORY.GUI.ACTIVE.LEFT:SetSize(BoxSize * 1.5, 0)
     INVENTORY.GUI.ACTIVE.LEFT:Dock(LEFT)
     INVENTORY.GUI.ACTIVE.LEFT:SetBackgroundColor(Color(0, 0, 0, 0))
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize, BoxSize * 2)
-    dropContainer:SetPos(BoxSize / 4, BoxSize / 4)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    dropContainer:Receiver("1x2", DropEvent1x2)
-    INVENTORY.GUI.ACTIVE.LEFT:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize, BoxSize * 2)
-    dropContainer:SetPos(BoxSize / 4, BoxSize / 2 + BoxSize * 2)
-    dropContainer:Receiver("1x2", DropEvent1x2)
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    INVENTORY.GUI.ACTIVE.LEFT:Add(dropContainer)
-    dropContainer = vgui.Create("DPanel")
-    dropContainer:SetSize(BoxSize, BoxSize)
-    dropContainer:SetPos(BoxSize / 4, BoxSize + BoxSize * 3 + (BoxSize * 3 / 4))
-    dropContainer.Paint = function(self, w, h)
-        surface.SetDrawColor(50, 50, 50, 150)
-        surface.DrawRect(0, 0, w, h)
-        surface.SetDrawColor(50, 50, 50)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
-    end
-    dropContainer:Receiver("1x1", DropEvent1x1)
-    INVENTORY.GUI.ACTIVE.LEFT:Add(dropContainer)
+    INVENTORY.GUI.ACTIVE.LEFT:Add(createContainer(1,2,BoxSize / 4, BoxSize / 4))
+    INVENTORY.GUI.ACTIVE.LEFT:Add(createContainer(1,2,BoxSize / 4, BoxSize / 2 + BoxSize * 2))
+    INVENTORY.GUI.ACTIVE.LEFT:Add(createContainer(1,1,BoxSize / 4, BoxSize + BoxSize * 3 + (BoxSize * 3 / 4)))
 end
+
+function createContainer(x,y,posX,posY,hidden)
+    dropContainer = vgui.Create("DPanel")
+    dropContainer:SetSize(BoxSize*x, BoxSize*y)
+    dropContainer:SetPos(posX, posY)
+    if x == 1 then
+        if y == 1 then
+            dropContainer:Receiver("1x1", DropEvent1x1)
+        else
+            dropContainer:Receiver("1x2", DropEvent1x2)
+        end
+    elseif y == 1 then
+        dropContainer:Receiver("2x1", DropEvent2x1)
+    else
+        dropContainer:Receiver("2x2", DropEvent2x2)
+    end
+    dropContainer.Paint = function(self, w, h)
+        surface.SetDrawColor(50, 50, 50, 150)
+        surface.DrawRect(0, 0, w, h)
+        surface.SetDrawColor(50, 50, 50)
+        surface.DrawOutlinedRect(0, 0, w, h, 2)
+    end
+    if hidden then
+        dropContainer:SetVisible(false)
+    end
+    return dropContainer
+end
+
 
 function CreateDropItem(Name, Size, Texture,index)
     local Item = vgui.Create("DPanel")
@@ -303,80 +251,135 @@ function CreateDropItem(Name, Size, Texture,index)
         x, y = 1, 1
         Item:Droppable("1x1")
     end
-    print("Creating Item: " .. Name)
     Item:SetSize(BoxSize * x, BoxSize * y)
-    Item:SetCookieName("Panel" .. index)
+    Item:SetCookieName("Panel" .. #INVENTORY.ITEMS ..", " ..  index)
     Item:SetCookie("isEquipped","false")
-    Item:SetCookieName("Panel" .. index)
-    print(Item:GetCookie("isEquipped"))
     Text:SetText(Name)
     Text:SizeToContents()
-    Item:SetBackgroundColor(Texture)
+    r,g,b = HexToRGB(Texture)
+    Item:SetBackgroundColor(Color(r,g,b))
     Item:SetName(Name)
     Item:Droppable("Inventory")
 
     return Item
 end
 
+function AddToInventory(item)
+        PrintTable(item)
+    if item.Active then
+        AddToActiveInventory(item)
+    else
+        AddToPassiveInventory(item) 
+    end
+end
 
-function FillInventory(items)
-        print("2")
-    print("____________ ITEMS ________________")
-    PrintTable(items)
-    for i, data in ipairs(items) do
-        print("Filling item: " .. data.Item_ID .. " Amount: " .. data.Amount)
-        for j = 1, data.Amount do
-            local itemInfo = InventoryItems[data.Item_ID]
-            PrintTable(itemInfo)
-            if itemInfo then
-                local x, y = 1, 1
-                local Size = tonumber(itemInfo.Size )
-                local ItemPanel = CreateDropItem(
-                    data.Item_ID,
-                    itemInfo.Size,
-                    itemInfo.Color,
-                    i .. "_" .. j
-                )
-                print("Created Item Panel for: " .. data.Item_ID .. " Size: " .. itemInfo.Size)
-                if Size == 1 then
-                    x, y = 1, 1
-                elseif Size == 2 then
-                    x, y = 2, 1
-                elseif Size == 3 then
-                    x, y = 1, 2
-                elseif Size == 4 then
-                    x, y = 2, 2
-                end
 
-                for i = 0, INVENTORY.SETTINGS.TABLE.WIDTH * INVENTORY.SETTINGS.TABLE.HEIGHT do
-                    print(INVENTORY.GUI.MAIN)
-                    local inventoryhover = INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i)
-                    if isDropable(inventoryhover, i, x, y, ItemPanel) then
-                        inventoryhover:Add(ItemPanel)
-                        changeSizes(inventoryhover, x, y, ItemPanel)
-                        break
-                    end
-                    i = i + 1
+function AddToActiveInventory(item)
+end
+
+
+function AddToPassiveInventory(item)
+    for i = 1, item.Amount do
+        local itemInfo = InventoryItems[item.Item_ID]
+        if itemInfo then
+            local Size = tonumber(itemInfo.Size )
+            local ItemPanel = CreateDropItem(
+                item.Item_ID,
+                itemInfo.Size,
+                itemInfo.Color,
+                i
+            )
+            local x,y = 1,1
+            if Size == 1 then
+                x, y = 1, 1
+            elseif Size == 2 then
+                x, y = 2, 1
+            elseif Size == 3 then
+                x, y = 1, 2
+            elseif Size == 4 then
+                x, y = 2, 2
+            end
+
+
+            for i = 0, INVENTORY.SETTINGS.TABLE.WIDTH * INVENTORY.SETTINGS.TABLE.HEIGHT do
+                local inventoryhover = INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i)
+                if isDropable(inventoryhover, i, x, y, ItemPanel) then
+                    inventoryhover:Add(ItemPanel)
+                    changeSizes(inventoryhover, x, y, ItemPanel)
+                    break
                 end
-            else
-                print("Item info not found for: " .. data.Item_ID)
             end
         end
     end
-    print("____________END TBLE ________________")
-    PrintTable(INVENTORY.ITEMS)
 
 end
+
+function RemoveFromPassiveInventory(itemName)
+    for i = 0, #INVENTORY.GUI.PASSIVE:GetChild(0):GetChildren()-1 do
+        if#INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i):GetChildren() == 1 and (INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i):GetChild(0):GetName() == itemName or itemName == nil) then
+            
+            
+            local xBox, yBox = INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i):GetChild(0):GetSize()
+            BoxSize = math.floor(INVENTORY.SETTINGS.BOXSIZE)
+            xBox, yBox = xBox / BoxSize, yBox / BoxSize
+            xBox, yBox = math.floor(xBox), math.floor(yBox)
+            changeSizes(nil,xBox, yBox,INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i):GetChild(0))
+            INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i):GetChild(0):Remove()
+            if itemName then return end
+
+        end
+    end
+end
+
+function RemoveFromActiveInventory(itemName)
+    for i = 0, #INVENTORY.GUI.ACTIVE.TOP:GetChildren()-1 do
+        if #INVENTORY.GUI.ACTIVE.TOP:GetChild(i):GetChildren() == 1 and (INVENTORY.GUI.ACTIVE.TOP:GetChild(i):GetChild(0):GetName() ==  itemName or itemName == nil) then
+            INVENTORY.GUI.ACTIVE.TOP:GetChild(i):GetChild(0):Remove()
+            if itemName then return end
+        end
+    end
+    for i = 0, #INVENTORY.GUI.ACTIVE.LEFT:GetChildren()-1 do
+        if #INVENTORY.GUI.ACTIVE.LEFT:GetChild(i):GetChildren() == 1 and (INVENTORY.GUI.ACTIVE.LEFT:GetChild(i):GetChild(0):GetName() == itemName or itemName == nil) then
+            INVENTORY.GUI.ACTIVE.LEFT:GetChild(i):GetChild(0):Remove()
+            if itemName then return end
+        end
+    end
+    for i = 0, #INVENTORY.GUI.ACTIVE.BOTTOM:GetChildren()-1 do
+        if #INVENTORY.GUI.ACTIVE.BOTTOM:GetChild(i):GetChildren() == 1 and (INVENTORY.GUI.ACTIVE.BOTTOM:GetChild(i):GetChild(0):GetName() ==  itemName or itemName == nil) then
+            INVENTORY.GUI.ACTIVE.BOTTOM:GetChild(i):GetChild(0):Remove()
+            if itemName then return end
+        end
+    end
+end
+
+function ClearInventory()
+    RemoveFromPassiveInventory(nil)
+    RemoveFromActiveInventory(nil)
+end
+
+
 concommand.Add(
     "inv",
     function()
         if(INVENTORY.GUI.MAIN and INVENTORY.GUI.MAIN:IsValid()) then
+            -- INVENTORY.GUI.MAIN:Remove()
+            INVENTORY.GUI.ACTIVE.MODEL:SetModel(LocalPlayer():GetModel())
             INVENTORY.GUI.MAIN:SetVisible(not INVENTORY.GUI.MAIN:IsVisible())
             return
         else
-            RequestInventorySync() 
             CreateInventory()
+            RequestInventorySync() 
         end
         
+    end
+)
+concommand.Add(
+    "invReload",
+    function()
+        INVENTORY.GUI.MAIN:Remove()
+        INVENTORY.ITEMS = {}
+        CreateInventory()
+        RequestInventorySync() 
+        INVENTORY.GUI.MAIN:SetVisible()
     end
 )

@@ -1,18 +1,23 @@
 if SERVER then
-    util.AddNetworkString("InventorySync")
+    include("inventory/sv_inventory_database.lua")
+    util.AddNetworkString("InventoryAdd")
+    util.AddNetworkString("InventoryClear")
+    util.AddNetworkString("InventoryCreate")
+    util.AddNetworkString("InventoryModelChange")
     util.AddNetworkString("RequestInventorySync")
     util.AddNetworkString("RequestInventoryEquip")
     util.AddNetworkString("requestLoadInventoryToLocal")
 
-    function SyncPlayerInventory(player)
-        print("Syncing inventory for player: " .. player:Nick())
-        local inventory = readInventory(player)
-        for k, v in pairs(inventory) do
-            print("Item ID: " .. v.Item_ID .. " | Quantity: " .. v.Amount .. "| Active: " .. (v.Active or "false"))
-        end
-        net.Start("InventorySync")
-        net.WriteTable(inventory)
-        net.Send(player)
+    function SyncPlayerInventory(ply)
+        print("Syncing inventory for player: " .. ply:Nick())
+        local inventory = readInventory(ply)
+        timer.Simple(1, function()
+            for k, v in pairs(inventory) do
+                net.Start("InventoryAdd")
+                net.WriteTable(v)
+                net.Send(ply)
+            end
+        end)
     end
     net.Receive("RequestInventorySync", function(len, ply)
         SyncPlayerInventory(ply)
@@ -36,62 +41,89 @@ if SERVER then
 
     net.Receive("RequestInventoryEquip", function(len, ply)
         local activeItems = net.ReadTable()
-        print(activeItems)
-        PrintTable(activeItems)
         local inventory = readInventory(ply)
         
-        print(inventory)
         if not inventory then return end
-        ply:RemoveAllAmmo()
         for k, v in pairs(activeItems) do
             if v.Active then
-                print("Checking item: " .. v.Item_ID .. " for player: " .. ply:Nick())
-
                 for k2, v2 in pairs(inventory) do
                     if v.Item_ID == v2.Item_ID then
                         print("Equipping item: " .. v2.Item_ID .. " for player: " .. ply:Nick())
-                        PrintTable(v2)
-                        ply:Give(v2.Item_ID, true)
-                        ply:GiveAmmo(tonumber(InventoryItems[v2.Item_ID].Ammo) or 0, InventoryItems[v2.Item_ID].Name, true)
-                        print("Giving item " .. v2.Item_ID .. " to " .. ply:Nick() .. " and " .. InventoryItems[v2.Item_ID].Ammo .. " Bullets worth of " .. InventoryItems[v2.Item_ID].Name .. " Ammonition")
+                        if(InventoryItems[v2.Item_ID].Ammo)then
+                            ply:GiveAmmo(InventoryItems[v2.Item_ID].Ammo,v2.Item_ID,true)
+                        elseif(InventoryItems[v2.Item_ID].Model_Route) then
+                            ply:SetModel(InventoryItems[v2.Item_ID].Model_Route) 
+                            net.Start("InventoryModelChange")
+                            net.WriteString(InventoryItems[v2.Item_ID].Model_Route)
+                            net.Send(ply)
+                        else
+                            ply:Give(v2.Item_ID, true)
+                        end
+                        updateInventoryEntry(ply,v.Item_ID,nil,true)
                     else
-                        print("Not Valid")
                     end
                 end
             else
                 print("Stripping item: " .. v.Item_ID .. " for player: " .. ply:Nick())
-                ply:StripWeapon(v.Item_ID)
+                if(InventoryItems[v.Item_ID].Ammo)then
+                    ply:RemoveAmmo(InventoryItems[v.Item_ID].Ammo,v.Item_ID)
+                elseif(InventoryItems[v.Item_ID].Model_Route) then
+                    ply:SetModel("models/player/alyx.mdl") 
+                    net.Start("InventoryModelChange")
+                    net.WriteString("models/player/alyx.mdl")
+                    net.Send(ply)
+                else
+                    ply:StripWeapon(v.Item_ID)
+                end
+                updateInventoryEntry(ply,v.Item_ID,nil,false)
             end
         end
-        print("Updated active items for player: " .. ply:Nick())
     end)
 
-    hook.Add("PlayerSpawn","PlayerSpawnSetInventory",function(ply)
-        timer.Simple(1, function()
+    hook.Add("PlayerSpawn","PlayerSpawnSetInventory",function(ply,transition)
+        timer.Simple(0, function()
             ply:RemoveAllItems()
             ply:RemoveAllAmmo()
-            SyncPlayerInventory(ply)
+            net.Start("InventoryClear")
+            net.Send(ply)
+            local inventory = readInventory(ply)
+            timer.Simple(1, function()
+                for k, v in pairs(inventory) do
+                    net.Start("InventoryAdd")
+                    net.WriteTable(v)
+                    net.Send(ply)
+                end
+            end)
         end)
+    end)
+    
+    hook.Add("PlayerInitialSpawn","Startup",function(ply,transition)
+        net.Start("InventoryCreate")
+        net.Send(ply)
     end)
 end
 if CLIENT then
-
-
+    
     local inventory = {}
 
-    net.Receive("InventorySync", function()
-        if IsValid(INVENTORY.GUI.MAIN) then
-            INVENTORY.GUI.MAIN:Remove()
-        end
-        CreateInventory()
-
+    net.Receive("InventoryAdd", function()
         inventory = net.ReadTable()
-        print("Received inventory sync :")
-        INVENTORY.ITEMS = inventory
-        PrintTable(inventory)
-        PrintTable(INVENTORY.ITEMS)
-        print("Filling Inventory")
-        FillInventory(INVENTORY.ITEMS)
+        table.insert(INVENTORY.ITEMS,inventory)
+        AddToInventory(inventory)
+    end)
+    net.Receive("InventoryModelChange", function()
+        model = net.ReadString()
+        INVENTORY.GUI.ACTIVE.MODEL:SetModel(model)
+        -- INVENTORY.GUI.ACTIVE.MODEL:StartScene(LocalPlayer())
+    end)
+    
+    net.Receive("InventoryClear", function()
+        INVENTORY.ITEMS = {}
+        ClearInventory()
+    end)
+    net.Receive("InventoryCreate", function()
+        INVENTORY.ITEMS = {}
+        CreateInventory()
     end)
 
     function RequestInventorySync()
@@ -110,22 +142,21 @@ if CLIENT then
         net.SendToServer()
     end
 
+    hook.Add("EntityModelChanged", "ModelChangeHook", function(ent, oldModel, newModel)
+    if ent == LocalPlayer() then
+        print("Local player model changed:", oldModel, "→", newModel)
+    end
+end)
+
 end
 
 
 
 concommand.Add(
-    "loadIt",
-        function()
-            net.Start("requestLoadInventoryToLocal")
-            net.SendToServer()
-    end
-)
-
-concommand.Add(
     "strip",
         function()
-            RequestInventoryEquip()
+            CreateInventory()
+            RequestInventorySync() 
     end
 )
 
