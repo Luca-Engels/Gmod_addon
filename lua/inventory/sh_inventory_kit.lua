@@ -9,6 +9,7 @@ inventoryKit = {
         "smg1_grenade",
         "pistol",
         "model_armor",
-        "model_armor_black"
+        "model_armor_black",
+        "weapon_ar2"
     },
 }

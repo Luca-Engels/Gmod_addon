@@ -1,7 +1,7 @@
 InventoryItems = {
     ["weapon_crowbar"] = {
         ["Name"] = "Crowbar",
-        ["Size"] = 3,
+        ["Size"] = 2,
         ["Color"] = "#FF0000"
     },
     ["weapon_pistol"] = {
@@ -21,12 +21,12 @@ InventoryItems = {
     },
     ["weapon_ar2"] = {
         ["Name"] = "AR2",
-        ["Size"] = 4,
+        ["Size"] = 5,
         ["Color"] = "#FF00FF"
     },
     ["weapon_crossbow"] = {
         ["Name"] = "Crossbow",
-        ["Size"] = 4,
+        ["Size"] = 5,
         ["Color"] = "#00FFFF"
     },
     ["weapon_shotgun"] = {
@@ -36,7 +36,7 @@ InventoryItems = {
     },
     ["weapon_rpg"] = {
         ["Name"] = "RPGLauncher",
-        ["Size"] = 3,
+        ["Size"] = 5,
         ["Color"] = "#000000"
     },
     ["item_ammo_smg1"] = {

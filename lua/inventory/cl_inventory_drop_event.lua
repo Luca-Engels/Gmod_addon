@@ -1,32 +1,45 @@
 function isDropable(toPut, i, x, y, PickedUpItem)
+    local width = toPut:GetCookie("SizeX")
+    local height = toPut:GetCookie("SizeY")
     if x == 1 and y == 1 and #toPut:GetChildren() == 0 and toPut:GetParent():GetChild(i):GetWide() > 0 then
         return true
     elseif x == 2 and y == 1 then
-        if #toPut:GetChildren() == 0 and ((i + 1) % 10) ~= 0 
+        if #toPut:GetChildren() == 0 and ((i + 1) % width) ~= 0 
         and (#toPut:GetParent():GetChild(i + 1):GetChildren() == 0 or toPut:GetParent():GetChild(i + 1):GetChild(0) == PickedUpItem) 
         and (toPut:GetParent():GetChild(i + 1):GetWide() > 0) and toPut:GetParent():GetChild(i):GetWide() > 0 then
             return true
         end
+    elseif x == 3 and y == 1 then
+        if #toPut:GetChildren() == 0 and ((i + 1) % width) ~= 0 
+        and #toPut:GetChildren() == 0 and ((i + 2) % width) ~= 0
+        and (#toPut:GetParent():GetChild(i + 1):GetChildren() == 0 or toPut:GetParent():GetChild(i + 1):GetChild(0) == PickedUpItem) 
+        and (#toPut:GetParent():GetChild(i + 2):GetChildren() == 0 or toPut:GetParent():GetChild(i + 2):GetChild(0) == PickedUpItem) 
+        and (toPut:GetParent():GetChild(i + 1):GetWide() > 0) and toPut:GetParent():GetChild(i):GetWide() > 0 
+        and (toPut:GetParent():GetChild(i + 2):GetWide() > 0) and toPut:GetParent():GetChild(i):GetWide() > 0 then
+            return true
+        end
     elseif x == 1 and y == 2 then 
-        if #toPut:GetChildren() == 0 and (i + 1) <= INVENTORY.SETTINGS.TABLE.WIDTH * INVENTORY.SETTINGS.TABLE.HEIGHT - INVENTORY.SETTINGS.TABLE.WIDTH 
-        and (#toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH):GetChildren() == 0 or toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH):GetChild(0) == PickedUpItem) 
-        and (toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH):GetWide() > 0) 
+        if #toPut:GetChildren() == 0 and (i + 1) <= width * height - width 
+        and (#toPut:GetParent():GetChild(i + width):GetChildren() == 0 or toPut:GetParent():GetChild(i + width):GetChild(0) == PickedUpItem) 
+        and (toPut:GetParent():GetChild(i + width):GetWide() > 0) 
         and toPut:GetParent():GetChild(i):GetWide() > 0 then
             return true        end
     elseif x == 2 and y == 2 then
-        if #toPut:GetChildren() == 0 and ((i + 1) % 10) ~= 0 and (i + 1) <= INVENTORY.SETTINGS.TABLE.WIDTH * INVENTORY.SETTINGS.TABLE.HEIGHT - INVENTORY.SETTINGS.TABLE.WIDTH 
+        if #toPut:GetChildren() == 0 and ((i + 1) % width) ~= 0 and (i + 1) <= width * height - width 
         and (#toPut:GetParent():GetChild(i + 1):GetChildren() == 0 or toPut:GetParent():GetChild(i + 1):GetChild(0) == PickedUpItem) 
-        and (#toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH):GetChildren() == 0 or toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH):GetChild(0) == PickedUpItem) 
-        and (#toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH + 1):GetChildren() == 0 or toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH + 1):GetChild(0) == PickedUpItem) 
-        and (toPut:GetParent():GetChild(i + 1):GetWide() > 0 or (toPut:GetParent():GetChild(i + 1 - INVENTORY.SETTINGS.TABLE.WIDTH):GetChildren() != 0 and toPut:GetParent():GetChild(i + 1 - INVENTORY.SETTINGS.TABLE.WIDTH):GetChild(0) == PickedUpItem))
-        and (toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH):GetWide() > 0 or (toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH-1):GetChildren() != 0 and toPut:GetParent():GetChild(i + INVENTORY.SETTINGS.TABLE.WIDTH-1):GetChild(0) == PickedUpItem))
-        and toPut:GetParent():GetChild(i):GetWide() > 0 then 
-            return true 
+        and (#toPut:GetParent():GetChild(i + width):GetChildren() == 0 or toPut:GetParent():GetChild(i + width):GetChild(0) == PickedUpItem) 
+        and (#toPut:GetParent():GetChild(i + width + 1):GetChildren() == 0 or toPut:GetParent():GetChild(i + width + 1):GetChild(0) == PickedUpItem) 
+        and (toPut:GetParent():GetChild(i + 1):GetWide() > 0 or (toPut:GetParent():GetChild(i + 1 - width):GetChildren() != 0 and toPut:GetParent():GetChild(i + 1 - width):GetChild(0) == PickedUpItem))
+        and (toPut:GetParent():GetChild(i + width):GetWide() > 0 or (toPut:GetParent():GetChild(i + width-1):GetChildren() != 0 and toPut:GetParent():GetChild(i + width-1):GetChild(0) == PickedUpItem))
+        and toPut:GetParent():GetChild(i):GetWide() > 0 then
+            return true
         end
     end
 
     return false
 end
+
+
 
 
 function DropEvent1x2(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
@@ -35,6 +48,10 @@ end
 
 function DropEvent2x1(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
     DropEvent(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory, 2, 1)
+end
+
+function DropEvent3x1(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
+    DropEvent(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory, 3, 1)
 end
 
 function DropEvent2x2(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
@@ -83,6 +100,7 @@ function DropEventInventory(InventoryHover, PickedUpItemTBL, wasDropped, index, 
     local PickedUpItem = PickedUpItemTBL[1]
     local xBox, yBox = PickedUpItem:GetSize()
     BoxSize = math.floor(INVENTORY.SETTINGS.BOXSIZE)
+
     xBox, yBox = xBox / BoxSize, yBox / BoxSize
     xBox, yBox = math.floor(xBox), math.floor(yBox)
     local i = 0
@@ -92,11 +110,10 @@ function DropEventInventory(InventoryHover, PickedUpItemTBL, wasDropped, index, 
     end
 
     if wasDropped then
-        print(PickedUpItem:GetName())
-        print(PickedUpItem:GetCookie("isEquipped"))
         if isDropable(InventoryHover, i, xBox, yBox, PickedUpItem) then
             changeSizes(InventoryHover, xBox, yBox, PickedUpItem)
             if PickedUpItem:GetCookie("isEquipped") == "true" then
+                print("UNEQUIPEN____________")
                 PickedUpItem:SetCookie("isEquipped","false")
                 print(PickedUpItem:GetName() .. " was dropped in Inventory from Player")
                 local activeItems = {
@@ -120,10 +137,49 @@ function DropEventInventory(InventoryHover, PickedUpItemTBL, wasDropped, index, 
             InventoryHover:Add(PickedUpItem)
             print(InventoryHover:GetName() .. " was dropped in Inventory by Inventory", PickedUpItem:GetText())
         end 
-        for i=0 , #INVENTORY.GUI.PASSIVE:GetChild(0):GetChildren() -1 do
-            if(INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i):HasChildren())then
-                print(INVENTORY.GUI.PASSIVE:GetChild(0):GetChild(i):GetChild(0):GetCookie("isEquipped"))
+    end
+end
+
+function DropEventEquipment(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
+    local PickedUpItem = PickedUpItemTBL[1]
+    local xBox, yBox = PickedUpItem:GetSize()
+    BoxSize = math.floor(INVENTORY.SETTINGS.BOXSIZE)
+
+    xBox, yBox = xBox / BoxSize, yBox / BoxSize
+    xBox, yBox = math.floor(xBox), math.floor(yBox)
+    local i = 0
+    for k, v in pairs(InventoryHover:GetParent():GetChildren()) do
+        if v == InventoryHover then break end
+        i = i + 1
+    end
+
+    if wasDropped then
+        if isDropable(InventoryHover, i, xBox, yBox, PickedUpItem) then
+            changeSizes(InventoryHover, xBox, yBox, PickedUpItem)
+            if PickedUpItem:GetCookie("isEquipped") == "false" then
+                print("EQUIPPPPPPPPPPEDDDDDDDDD________________________")
+                PickedUpItem:SetCookie("isEquipped","true")
+                print(PickedUpItem:GetName() .. " was dropped in Inventory from Player")
+                local activeItems = {
+                    { Item_ID = PickedUpItem:GetName(), Active = true },
+                }
+                net.Start("RequestInventoryEquip")
+                net.WriteTable(activeItems)
+                net.SendToServer()
+                
+                if xBox == 2 and yBox == 2 then
+                    print("HERELKHROIUJHEBRIB")
+                    for i = 1, #INVENTORY.GUI.ACTIVE.BOTTOM:GetChildren()-1 do
+                        
+                        INVENTORY.GUI.ACTIVE.BOTTOM:GetChild(i):SetVisible(false)
+                    end
+                end
+                InventoryHover:Add(PickedUpItem)
+            else
+                print(PickedUpItem:GetName() .. " was moved in Inventory")
             end
-        end
+            InventoryHover:Add(PickedUpItem)
+            print(InventoryHover:GetName() .. " was dropped in Inventory by Inventory", PickedUpItem:GetText())
+        end 
     end
 end
