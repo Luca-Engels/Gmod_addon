@@ -9,6 +9,7 @@ function CreateTable()
     sql.Query("CREATE TABLE IF NOT EXISTS player_data (SteamID TEXT PRIMARY KEY, Faction TEXT)")
     sql.Query("CREATE TABLE IF NOT EXISTS item_data (Item_ID TEXT, Item_Name TEXT, Size INTEGER, Color_HEX VARCHAR(7), Ammo INTEGER, PRIMARY KEY (Item_ID))")
     sql.Query("CREATE TABLE IF NOT EXISTS player_inventory (SteamID TEXT, Item_ID TEXT, Amount INTEGER,Active INTEGER, PRIMARY KEY (SteamID, Item_ID))")
+    sql.Query("CREATE TABLE IF NOT EXISTS class_inventory (classID TEXT, Item_ID TEXT, PRIMARY KEY (classID, Item_ID))")
 end
 
 function ReadTable()
@@ -27,10 +28,11 @@ function DeleteTable()
     sql.Query("DROP TABLE IF EXISTS player_data")
     sql.Query("DROP TABLE IF EXISTS item_data")
     sql.Query("DROP TABLE IF EXISTS player_inventory")
+    sql.Query("DROP TABLE IF EXISTS class_inventory")
 end
 
 function CreatePlayer(player, faction)
-    local result = ReadPlayer(player)
+    local result = readPlayer(player)
     if(result) then
         ErrorNoHalt("Player with SteamID: " .. player:SteamID() .. " already exists.\n")
         return
@@ -38,7 +40,7 @@ function CreatePlayer(player, faction)
     sql.Query("INSERT INTO player_data (SteamID, Faction) VALUES ('" .. player:SteamID() .. "', '" .. faction .. "')")
 end
 
-function ReadPlayer(player)
+function readPlayer(player)
     local result = sql.Query("SELECT * FROM player_data WHERE SteamID = '" .. player:SteamID() .. "'")
     if(not result) then
         ErrorNoHalt("No player found with SteamID: " .. player:SteamID() .. "\n")
@@ -48,7 +50,7 @@ function ReadPlayer(player)
 end
 
 function UpdatePlayer(player, faction)
-    local result = ReadPlayer(player)
+    local result = readPlayer(player)
     if(not result) then
         return
     end
@@ -56,7 +58,7 @@ function UpdatePlayer(player, faction)
 end
 
 function DeletePlayer(player)
-    local result = ReadPlayer(player)
+    local result = readPlayer(player)
     if(not result) then
         return
     end
@@ -100,7 +102,7 @@ function DeleteItem(itemID)
 end
 
 function createInventoryEntry(player, itemID, amount)
-    local result = ReadPlayer(player)
+    local result = readPlayer(player)
     if(not result) then
         ErrorNoHalt("No player found with SteamID: " .. player:SteamID() .. "\n")
         return
@@ -163,13 +165,7 @@ function updateInventoryEntry(player, itemID, amount, active)
     local activeValue = active and 1 or 0
 
     print(player,itemID,amount,activeValue,result)
-    sql.Query(string.format(
-        "UPDATE player_inventory SET Amount = %d, Active = %d WHERE SteamID = '%s' AND Item_ID = '%s';",
-        amount,
-        activeValue,
-        player:SteamID(),
-        itemID
-    ))
+    sql.Query("UPDATE player_inventory SET Amount = " .. amount .. ", Active = " .. activeValue .. " WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
 
 end
 
@@ -183,7 +179,38 @@ function deleteInventoryEntry(player, itemID, amount)
         sql.Query("DELETE FROM player_inventory WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
         SyncPlayerInventory(player)
     else
-        sql.Query("DELETE FROM player_inventory WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
         updateInventoryEntry(player, itemID, tonumber(result[1].Amount) - amount)
+    end
+end
+
+
+function createClassEntry(className,itemID)
+    local result = sql.Query("SELECT * FROM class_inventory WHERE classID = '".. className .."' and itemID = '".. itemID .."'")
+    if ( not result ) then
+        sql.Query("INSERT INTO class_inventory (classID, Item_ID) VALUES ('".. className .."','".. itemID .."')")
+        ErrorNoHalt("Entry for " .. className .. " and " .. itemID .. "added\n")
+    else 
+        ErrorNoHalt("Entry for " .. className .. " and " .. itemID .. "already exists\n")
+    end
+end
+
+function readClassEntry(className)
+    print(className)
+    local result = sql.Query("Select * from class_inventory WHERE classID = '".. className .."'")
+    return result
+end
+
+function deleteClassEntry(className,itemID)
+    local itemResult = ReadItem(itemID)
+    if(not itemResult) then
+        ErrorNoHalt("No item found with ID: " .. itemID .. "\n")
+        return
+    end
+    local result = readClassEntry(className,ItemID)
+    if ( not result ) then
+        sql.Query("DELETE FROM class_inventory WHERE classID = '".. className .."' and itemID = '".. itemID .."')")
+        ErrorNoHalt("Entry for " .. className .. " and " .. itemID .. "removed\n")
+    else 
+        ErrorNoHalt("No item found with ID: " .. itemID .. "\n")
     end
 end

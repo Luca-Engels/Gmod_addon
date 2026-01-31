@@ -13,8 +13,11 @@ local function serverCommands(sender, text)
         end
         CreatePlayer(sender, "Starter")
         -- for everything in {} Starter add to player inventory
-        for itemKey, itemData in pairs(inventoryKit["Starter"]) do
+        for itemKey, itemData in pairs(inventoryKit["Starter"]["Inventory"]) do
             createInventoryEntry(sender, itemData, 1)
+        end
+        for itemKey, itemData in pairs(inventoryKit["Starter"]["WeaponChest"]) do
+            createClassEntry("Starter", itemData)
         end
         return ""
     elseif string.match(text, "!reloadServer") or string.match(text, "!r") then
@@ -63,7 +66,7 @@ end
 
 hook.Add("PlayerAuthed", "CreatePlayerEntry", function(ply, steamID, uniqueID)
     timer.Simple(5, function()
-        local result = ReadPlayer(ply)
+        local result = readPlayer(ply)
         if(not result) then
             CreatePlayer(ply, "Starter")
             -- for everything in {} Starter add to player inventory

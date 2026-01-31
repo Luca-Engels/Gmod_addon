@@ -7,11 +7,13 @@ if SERVER then
     util.AddNetworkString("RequestInventorySync")
     util.AddNetworkString("RequestInventoryEquip")
     util.AddNetworkString("requestLoadInventoryToLocal")
+    util.AddNetworkString("WeaponChestAdd")
+    util.AddNetworkString("RequestWeaponChestSync")
 
     function SyncPlayerInventory(ply)
         print("Syncing inventory for player: " .. ply:Nick())
         local inventory = readInventory(ply)
-        timer.Simple(1, function()
+        timer.Simple(0, function()
             for k, v in pairs(inventory) do
                 net.Start("InventoryAdd")
                 net.WriteTable(v)
@@ -19,8 +21,24 @@ if SERVER then
             end
         end)
     end
+    function SyncPlayerWeaponChest(ply)
+        print("Syncing WeaponChest for player: " .. ply:Nick())
+        local playerClass = readPlayer(ply)[1]["Faction"]
+        local equipment = readClassEntry(playerClass)
+        timer.Simple(0, function()
+            for k, v in pairs(equipment) do
+                PrintTable(v)
+                net.Start("WeaponChestAdd")
+                net.WriteTable(v)
+                net.Send(ply)
+            end
+        end)
+    end
     net.Receive("RequestInventorySync", function(len, ply)
         SyncPlayerInventory(ply)
+    end)
+    net.Receive("RequestWeaponChestSync", function(len, ply)
+        SyncPlayerWeaponChest(ply)
     end)
 
     -- hook.Add("PlayerInitialSpawn", "LoadInventory", function(ply)
@@ -41,12 +59,15 @@ if SERVER then
 
     net.Receive("RequestInventoryEquip", function(len, ply)
         local activeItems = net.ReadTable()
+        local player = readPlayer(ply)
+        local classInventory = readClassEntry(player[1]["Faction"])
         local inventory = readInventory(ply)
         
         if not inventory then return end
         for k, v in pairs(activeItems) do
             if v.Active then
-                for k2, v2 in pairs(inventory) do
+                for k2, v2 in pairs(classInventory) do
+                    print("Checking item: " .. v2.Item_ID .. " against: " .. v.Item_ID)
                     if v.Item_ID == v2.Item_ID then
                         print("Equipping item: " .. v2.Item_ID .. " for player: " .. ply:Nick())
                         if(InventoryItems[v2.Item_ID].Ammo)then
@@ -59,8 +80,6 @@ if SERVER then
                         else
                             ply:Give(v2.Item_ID, true)
                         end
-                        updateInventoryEntry(ply,v.Item_ID,nil,true)
-                    else
                     end
                 end
             else
@@ -75,7 +94,6 @@ if SERVER then
                 else
                     ply:StripWeapon(v.Item_ID)
                 end
-                updateInventoryEntry(ply,v.Item_ID,nil,false)
             end
         end
     end)
@@ -104,16 +122,20 @@ if SERVER then
 end
 if CLIENT then
     
-    local inventory = {}
-
+    
     net.Receive("InventoryAdd", function()
-        inventory = net.ReadTable()
+        local inventory = net.ReadTable()
         table.insert(INVENTORY.ITEMS,inventory)
         AddToInventory(inventory)
     end)
+
+    net.Receive("WeaponChestAdd", function()
+        local item = net.ReadTable()
+        AddToWeaponChest(item)
+    end)
     net.Receive("InventoryModelChange", function()
         model = net.ReadString()
-        INVENTORY.GUI.ACTIVE.MODEL:SetModel(model)
+        INVENTORY.GUI.MODEL:SetModel(model)
         -- INVENTORY.GUI.ACTIVE.MODEL:StartScene(LocalPlayer())
     end)
     
@@ -128,6 +150,11 @@ if CLIENT then
 
     function RequestInventorySync()
         net.Start("RequestInventorySync")
+        net.SendToServer()
+    end
+    
+    function RequestWeaponChestSync()
+        net.Start("RequestWeaponChestSync")
         net.SendToServer()
     end
 

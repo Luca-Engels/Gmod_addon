@@ -33,44 +33,7 @@ function isDropable(toPut, i, sizeX, sizeY, PickedUpItem)
     return true
 end
 
-function DropEventInventory(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
-    local PickedUpItem = PickedUpItemTBL[1]
-    local xBox, yBox = PickedUpItem:GetSize()
-    BoxSize = math.floor(INVENTORY.SETTINGS.BOXSIZE)
-
-    xBox, yBox = xBox / BoxSize, yBox / BoxSize
-    xBox, yBox = math.floor(xBox), math.floor(yBox)
-    local i = 0
-    for k, v in pairs(InventoryHover:GetParent():GetChildren()) do
-        if v == InventoryHover then break end
-        i = i + 1
-    end
-
-    if wasDropped then
-        if isDropable(InventoryHover, i, xBox, yBox, PickedUpItem) then
-            changeSizes(InventoryHover, xBox, yBox, PickedUpItem)
-            if PickedUpItem:GetCookie("isEquipped") == "true" then
-                MsgC(Color(0,255,0),PickedUpItem:GetName() .. " was uequipped from your Inventory!\n")
-                PickedUpItem:SetCookie("isEquipped","false")
-                local activeItems = {
-                    { Item_ID = PickedUpItem:GetName(), Active = false },
-                }
-                net.Start("RequestInventoryEquip")
-                net.WriteTable(activeItems)
-                net.SendToServer()
-                
-                InventoryHover:Add(PickedUpItem)
-            else
-                print(PickedUpItem:GetName() .. " was moved in Inventory")
-            end
-            InventoryHover:Add(PickedUpItem)
-            print(InventoryHover:GetName() .. " was dropped in Inventory by Inventory", PickedUpItem:GetText())
-        end 
-    end
-end
-
-function DropEventEquipment(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
-    local PickedUpItem = PickedUpItemTBL[1]
+function DropEvent(InventoryHover, PickedUpItem,wasDropped,index,cursorx,cursory,doEquip)
     local xBox, yBox = PickedUpItem:GetSize()
     BoxSize = math.floor(INVENTORY.SETTINGS.BOXSIZE)
 
@@ -85,31 +48,50 @@ function DropEventEquipment(InventoryHover, PickedUpItemTBL, wasDropped, index, 
     if wasDropped then
         allow = InventoryHover:GetCookie("AllowType")
         Type = PickedUpItem:GetCookie("Type")
-        MsgC(Color(0,0,255),Type .. "\n")
-        MsgC(Color(27,129,36),allow )
-        Msg("\n")
         if not allow or allow == Type then
             if isDropable(InventoryHover, i, xBox, yBox, PickedUpItem) then
                 changeSizes(InventoryHover, xBox, yBox, PickedUpItem)
-                if PickedUpItem:GetCookie("isEquipped") == "false" then
-                    MsgC(Color(0,255,0),PickedUpItem:GetName() .. " was equipped to your Inventory!\n")
-                    PickedUpItem:SetCookie("isEquipped","true")
+                if PickedUpItem:GetCookie("isEquipped") == tostring(doEquip) then
+                    MsgC(Color(0,255,0),PickedUpItem:GetName() .. " was equipped / unequipped to / from your Inventory!\n")
+                    PickedUpItem:SetCookie("isEquipped",tostring(not doEquip))
                     local activeItems = {
-                        { Item_ID = PickedUpItem:GetName(), Active = true },
+                        { Item_ID = PickedUpItem:GetName(), Active = not doEquip },
                     }
                     net.Start("RequestInventoryEquip")
                     net.WriteTable(activeItems)
                     net.SendToServer()
-                    
-                    InventoryHover:Add(PickedUpItem)
                 else
                     print(PickedUpItem:GetName() .. " was moved in Inventory")
                 end
+                if PickedUpItem:GetParent():GetCookie("Infinite") == "true" then
+                    -- copy the item to the PickedUpItem:GerParent and changeSize
+                    local itemInfo = InventoryItems[PickedUpItem:GetName()]
+                    print("Creating copy of " .. PickedUpItem:GetName() .. " as it was taken from an infinite container.")
+                    local itemCopy = CreateDropItem(PickedUpItem:GetName(),itemInfo)
+                    local x, y = getSizeXY(itemInfo.Size)
+                    changeSizes(PickedUpItem:GetParent(), x,y, PickedUpItem)
+                    PickedUpItem:GetParent():Add(itemCopy)
+                    print("Create NEW")
+                end
                 InventoryHover:Add(PickedUpItem)
+                if( InventoryHover:GetCookie("isBin") == "true") then
+                    print("xBox: " .. tostring(xBox) .. " yBox: " .. tostring(yBox))
+                    changeSizes(nil,xBox, yBox,PickedUpItem)
+                    PickedUpItem:Remove()
+                    print("Item was removed as it was dropped in a bin.")
+                end
                 print(InventoryHover:GetName() .. " was dropped in Inventory by Inventory", PickedUpItem:GetText())
             end 
         else
             MsgC(Color(120,0,0), Type .. " is not allowed in Inventory reserved for " .. allow .. "!\n")
         end
     end
+end
+
+function DropEventInventory(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
+    DropEvent(InventoryHover,PickedUpItemTBL[1],wasDropped,index,cursorx,cursory,true)
+end
+
+function DropEventEquipment(InventoryHover, PickedUpItemTBL, wasDropped, index, cursorx, cursory)
+    DropEvent(InventoryHover,PickedUpItemTBL[1],wasDropped,index,cursorx,cursory,false)
 end
