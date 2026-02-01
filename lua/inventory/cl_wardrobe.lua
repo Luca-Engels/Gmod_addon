@@ -7,25 +7,25 @@ local ContainerIndex = 0
 
 AddCSLuaFile("cl_inventory_gui.lua")
 
-WEAPON_CHEST = WEAPON_CHEST or {
+WARDROBE = WARDROBE or {
     GUI = {
         MAIN = nil,
         PASSIVE = nil
     }
 }
 
-function CreateWeaponChest()
-    MsgC(Color(0,255,0),"__  Opening Weapon Chest __\n")
+function CreateWardrobe()
+    MsgC(Color(0,255,0),"__  Opening Wardrobe __\n")
     INVENTORY.GUI.MAIN:SetPos(scrw/2-winw/2,0)
-    WEAPON_CHEST.GUI.MAIN = vgui.Create("DPanel",INVENTORY.GUI.ALL)
+    WARDROBE.GUI.MAIN = vgui.Create("DPanel",INVENTORY.GUI.ALL)
 
-    WEAPON_CHEST.GUI.MAIN:SetSize(winw, winh-BoxSize/2)
-    WEAPON_CHEST.GUI.MAIN:Center()
-    WEAPON_CHEST.GUI.MAIN:MakePopup()
-    WEAPON_CHEST.GUI.MAIN:SetVisible(true)
-    WEAPON_CHEST.GUI.MAIN:SetBackgroundColor(Color(0,0,0,0))
-    WEAPON_CHEST.GUI.MAIN:SetPos(scrw/2-winw/2, scrh/2+BoxSize/2)
-    inventoryContainer = vgui.Create("DPanel",WEAPON_CHEST.GUI.MAIN)
+    WARDROBE.GUI.MAIN:SetSize(winw, winh-BoxSize/2)
+    WARDROBE.GUI.MAIN:Center()
+    WARDROBE.GUI.MAIN:MakePopup()
+    WARDROBE.GUI.MAIN:SetVisible(true)
+    WARDROBE.GUI.MAIN:SetBackgroundColor(Color(0,0,0,0))
+    WARDROBE.GUI.MAIN:SetPos(scrw/2-winw/2, scrh/2+BoxSize/2)
+    inventoryContainer = vgui.Create("DPanel",WARDROBE.GUI.MAIN)
     inventoryContainer:Dock(FILL)
     inventoryContainer:DockPadding(4,4,4,4)
     inventoryContainer:SetBackgroundColor(Color(0,0,0,0))
@@ -45,17 +45,58 @@ function CreateWeaponChest()
     CloseBar:SetContentAlignment(5)
 
     local LabelBar = vgui.Create("DPanel", CloseBar)
-    LabelBar:Dock(FILL)
-    LabelBar:SetBackgroundColor(Color(0,0,0,0))
+    LabelBar:SetSize(BoxSize*6, BoxSize )
+    LabelBar:SetPos(BoxSize*5,0 )
+    LabelBar:SetBackgroundColor(Color(255,0,0,0))
 
-    local InventoryPanel = getActiveInventoryPanel("WeaponChest")
-    CloseBar:Add(InventoryPanel)
-    InventoryPanel:Dock(FILL)
+
+    local InventoryLabel = vgui.Create("DLabel", LabelBar)
+    InventoryLabel:SetText("Kleiderschrank")
+    InventoryLabel:SetSize(BoxSize*5,BoxSize)
+    SetLabelSize(InventoryLabel, BoxSize*3/4)
+    InventoryLabel:Center()
+    
+    local NextPanelButton = vgui.Create("DButton", LabelBar)
+    NextPanelButton:SetSize(BoxSize * .5, BoxSize * .5)
+    NextPanelButton:SetColor(Color(0, 0, 0))
+    NextPanelButton:SetTextColor(Color(170,170,170))
+    NextPanelButton:DockMargin(BoxSize /4,BoxSize /4,0,BoxSize /4)
+    -- CloseButton:SetFont("Roboto_3")
+    NextPanelButton:Dock(RIGHT)
+    NextPanelButton:SetText("Kleiderschrank")
+    NextPanelButton.Paint = function(self, w, h)
+        draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 45))
+        surface.SetDrawColor(35, 35, 35)
+        surface.DrawOutlinedRect(0, 0, w, h, 4)
+
+    end
+    NextPanelButton.DoClick = function()
+        switchActiveInventoryPanel("Kleiderschrank")
+    end
+
+    local PrefviousPanelButton = vgui.Create("DButton", LabelBar)
+    PrefviousPanelButton:SetSize(BoxSize * .5, BoxSize * .5)
+    PrefviousPanelButton:SetColor(Color(0, 0, 0))
+    PrefviousPanelButton:SetTextColor(Color(170,170,170))
+    PrefviousPanelButton:DockMargin(BoxSize /4,BoxSize /4,0,BoxSize /4)
+    -- CloseButton:SetFont("Roboto_3")
+    PrefviousPanelButton:Dock(LEFT)
+    PrefviousPanelButton:SetText("Kleiderschrank")
+    PrefviousPanelButton.Paint = function(self, w, h)
+        draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 45))
+        surface.SetDrawColor(35, 35, 35)
+        surface.DrawOutlinedRect(0, 0, w, h, 4)
+
+    end
+    PrefviousPanelButton.DoClick = function()
+        switchActiveInventoryPanel("Kleiderschrank")
+    end
+
 
 
     local CloseButton = vgui.Create("DButton", CloseBar)
     CloseButton:SetSize(BoxSize /2, BoxSize /2)
-    CloseButton:DockMargin(0,BoxSize /4,BoxSize /4,BoxSize /4)
+    CloseButton:DockMargin(BoxSize /4,BoxSize /4,BoxSize /4,BoxSize /4)
     CloseButton:SetColor(Color(0, 0, 0))
     -- CloseButton:SetFont("Roboto_3")
     CloseButton:Dock(RIGHT)
@@ -91,16 +132,16 @@ function CreateWeaponChest()
         reload()
     end
 
-    WEAPON_CHEST.GUI.PASSIVE = vgui.Create("DPanel", inventoryContainer)
-    WEAPON_CHEST.GUI.PASSIVE:SetSize(0,5 * BoxSize + 8 + BoxSize /2 )
-    WEAPON_CHEST.GUI.PASSIVE:SetPos(0,0)
-    WEAPON_CHEST.GUI.PASSIVE:SetName("InventoryPassivePanel")
-    WEAPON_CHEST.GUI.PASSIVE:DockMargin(2,2,2,2)
-    WEAPON_CHEST.GUI.PASSIVE:DockPadding(2,2,2,2)
-    WEAPON_CHEST.GUI.PASSIVE:Dock(TOP)
-    WEAPON_CHEST.GUI.PASSIVE:SetBackgroundColor(Color(0,0,0,0))
-    WEAPON_CHEST.GUI.PASSIVE:Add(createContainerV2(12,5,BoxSize/2,0,"Bereitgestellte Ausrüstung",{["allow"] = "none", ["infinite"] = "true",["isEquipment"] = false}))
-    WEAPON_CHEST.GUI.PASSIVE:Add(createContainerV2(3,3,BoxSize * 13,0,"Zurücklegen",{["isEquipment"] = false,["isBin"] = true}))
+    WARDROBE.GUI.PASSIVE = vgui.Create("DPanel", inventoryContainer)
+    WARDROBE.GUI.PASSIVE:SetSize(0,5 * BoxSize + 8 + BoxSize /2 )
+    WARDROBE.GUI.PASSIVE:SetPos(0,0)
+    WARDROBE.GUI.PASSIVE:SetName("InventoryPassivePanel")
+    WARDROBE.GUI.PASSIVE:DockMargin(2,2,2,2)
+    WARDROBE.GUI.PASSIVE:DockPadding(2,2,2,2)
+    WARDROBE.GUI.PASSIVE:Dock(TOP)
+    WARDROBE.GUI.PASSIVE:SetBackgroundColor(Color(0,0,0,0))
+    WARDROBE.GUI.PASSIVE:Add(createContainerV2(12,5,BoxSize/2,0,"Bereitgestellte Ausrüstung",{["allow"] = "none", ["infinite"] = "true",["isEquipment"] = false}))
+    WARDROBE.GUI.PASSIVE:Add(createContainerV2(3,3,BoxSize * 13,0,"Zurücklegen",{["isEquipment"] = false,["isBin"] = true}))
 end
 
 

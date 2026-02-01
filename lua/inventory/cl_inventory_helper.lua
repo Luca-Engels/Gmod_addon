@@ -26,6 +26,10 @@ function SetLabelSize(label, size)
 
     label:SetFont(name)
     label:SizeToContents()
+    label:SetSize(
+        label:GetWide() + 8,
+        label:GetTall() + 8
+    )
 end
 
 
@@ -296,6 +300,91 @@ function highlightAcceptingType(allowType)
         end
     end
 end
+
+local function switchActiveInventoryPanel(panelName)
+    INVENTORY.GUI.MAIN:SetPos(scrw/2-winw/2,0)
+    if WEAPON_CHEST.GUI.MAIN and WEAPON_CHEST.GUI.MAIN:IsValid() then
+        WEAPON_CHEST.GUI.MAIN:Remove()
+    end
+
+    if panelName == "Waffenkiste" then
+        CreateWeaponChest()
+    elseif panelName == "Kleiderschrank" then
+        CreateWardrobe()
+    elseif panelName == "Spieler Lager" then
+        CreatePlayerStorage()
+    elseif panelName == "Fraktions Lager" then
+        CreateFractionStorage()
+    end
+end
+
+local function createButtonPanel(text,parent)
+    local button = vgui.Create("DButton", parent)
+    button:SetText(text)
+    button:SetTextColor(Color(255,255,255))
+    button:Dock(LEFT)
+
+    SetLabelSize(button, BoxSize*2/4)
+    button.Paint = function(self, w, h)
+        draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
+        surface.SetDrawColor(255, 255, 255)
+        surface.DrawOutlinedRect(0, 0, w, h, 2)
+    end
+    button.DoClick = function()
+        switchActiveInventoryPanel(text)
+    end
+    return button
+end
+function getActiveInventoryPanel(activePanel, parent)
+
+    local panel = vgui.Create("DPanel", parent)
+    panel:SetBackgroundColor(Color(0,0,0,0))
+
+    -- Container for buttons
+    local buttonHolder = vgui.Create("DPanel", panel)
+    buttonHolder:SetBackgroundColor(Color(0,0,0,0))
+    buttonHolder:Dock(TOP)
+    buttonHolder:SetTall(BoxSize)
+    buttonHolder.PerformLayout = function(self)
+        local w = 0
+
+        for _, child in ipairs(self:GetChildren()) do
+            w = w + child:GetWide()
+        end
+
+        self:SetWide(w)
+
+        -- Center horizontally
+        self:CenterHorizontal()
+    end
+    local weaponPanel = createButtonPanel("Waffenkiste", buttonHolder)
+    local wardrobePanel = createButtonPanel("Kleiderschrank", buttonHolder)
+    local playerStoragePanel = createButtonPanel("Spieler Lager", buttonHolder)
+    local fractionStoragePanel = createButtonPanel("Fraktions Lager", buttonHolder)
+
+
+    if activePanel == "WeaponChest" then
+        weaponPanel:SetDisabled(true)
+        weaponPanel:SetTextColor(Color(150,150,150))
+
+        weaponPanel.Paint = function(self, w, h)
+            surface.SetDrawColor(35, 35, 35)
+            surface.DrawOutlinedRect(0, 0, w, h, 4)
+        end
+    elseif activePanel == "Wardrobe" then
+        wardrobePanel:SetDisabled(true)
+    elseif activePanel == "PlayerStorage" then
+        playerStoragePanel:SetDisabled(true)
+    elseif activePanel == "FractionStorage" then
+        fractionStoragePanel:SetDisabled(true)
+    end
+
+
+    return panel
+end
+
+
+
 
 function closeInventory()
     INVENTORY.GUI.MAIN:SetPos(scrw/2-winw/2, scrh/2-winh/2)
