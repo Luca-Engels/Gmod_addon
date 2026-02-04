@@ -126,7 +126,7 @@ if CLIENT then
     net.Receive("InventoryAdd", function()
         local inventory = net.ReadTable()
         table.insert(INVENTORY.ITEMS,inventory)
-        AddToInventory(inventory)
+        -- AddToInventory(inventory)
     end)
 
     net.Receive("ArmoryAdd", function()

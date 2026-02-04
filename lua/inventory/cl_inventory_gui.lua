@@ -31,7 +31,6 @@ AddCSLuaFile("cl_inventory_helper.lua")
 
 function CreateInventory()
     MsgC(Color(0,255,0),"__ Creating Inventory __\n")
-    print("BoxSize: "..BoxSize  )
     INVENTORY.GUI.ALL = vgui.Create("DPanel")
     INVENTORY.GUI.ALL:SetSize(scrw, scrh)
     INVENTORY.GUI.ALL:Center()
@@ -51,7 +50,7 @@ function CreateInventory()
     INVENTORY.GUI.MAIN:SetPos(scrw/2-winw/2, scrh/2-winh/2)
     inventoryContainer = vgui.Create("DPanel",INVENTORY.GUI.MAIN)
     inventoryContainer:Dock(RIGHT)
-    inventoryContainer:DockPadding(4,4,4,4)
+    inventoryContainer:DockPadding(BoxSize/20,BoxSize/20,BoxSize/20,BoxSize/20)
     inventoryContainer:SetSize(11 * BoxSize,7 * BoxSize)
     inventoryContainer:SetPos(0,0)
     inventoryContainer:SetBackgroundColor(Color(0,0,0,0))
@@ -60,7 +59,7 @@ function CreateInventory()
         surface.SetDrawColor(50,50,50,100)
         surface.DrawRect(0, 0, w, h)
         surface.SetDrawColor(255,255,255)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
+        surface.DrawOutlinedRect(0, 0, w, h, BoxSize/10)
 
 
     end
@@ -85,7 +84,7 @@ function CreateInventory()
     CloseButton.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 45))
         surface.SetDrawColor(35, 35, 35)
-        surface.DrawOutlinedRect(0, 0, w, h, 4)
+        surface.DrawOutlinedRect(0, 0, w, h, BoxSize/10)
     end
 
     CloseButton.DoClick = function()
@@ -103,7 +102,7 @@ function CreateInventory()
     ReloadButton.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(45, 45, 45))
         surface.SetDrawColor(35, 35, 35)
-        surface.DrawOutlinedRect(0, 0, w, h, 4)
+        surface.DrawOutlinedRect(0, 0, w, h, BoxSize/10)
 
     end
 
@@ -114,12 +113,12 @@ function CreateInventory()
     
     modelContainer:Dock(LEFT)
     modelContainer:SetSize(5*BoxSize,0)
-    modelContainer:DockPadding(2,2,2,2)
+    modelContainer:DockPadding(BoxSize/40,BoxSize/40,BoxSize/40,BoxSize/40)
     modelContainer.Paint = function(self, w, h)
         surface.SetDrawColor(50,50,50,100)
         surface.DrawRect(0, 0, w, h)
         surface.SetDrawColor(255,255,255)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
+        surface.DrawOutlinedRect(0, 0, w, h, BoxSize/10)
     end
     INVENTORY.GUI.MODEL = vgui.Create("DModelPanel", modelContainer)
     INVENTORY.GUI.MODEL:SetModel("models/player/skeleton.mdl")

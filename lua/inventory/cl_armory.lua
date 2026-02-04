@@ -9,14 +9,14 @@ ARMORY = ARMORY or nil
 
 function CreateArmory()
     ARMORY = vgui.Create("DPanel")
-    ARMORY:SetSize(0,1 * BoxSize + 8 + BoxSize /2 )
+    ARMORY:SetSize(0,1 * BoxSize + BoxSize/10 + BoxSize /2 )
     ARMORY:SetPos(0,0)
     ARMORY:SetName("InventoryPassivePanel")
-    ARMORY:DockMargin(2,2,2,2)
-    ARMORY:DockPadding(2,2,2,2)
+    ARMORY:DockMargin(BoxSize/40,BoxSize/40,BoxSize/40,BoxSize/40)
+    ARMORY:DockPadding(BoxSize/40,BoxSize/40,BoxSize/40,BoxSize/40)
     ARMORY:SetBackgroundColor(Color(0,0,0,0))
-    ARMORY:Add(createContainerV2(11,4,BoxSize/2,0,"Bereitgestellte Ausrüstung",{["allow"] = "none", ["infinite"] = "true",["isEquipment"] = false}))
-    ARMORY:Add(createContainerV2(4,4,BoxSize * 12,0,"Zurücklegen",{["isEquipment"] = false,["isBin"] = true}))
+    ARMORY:Add(createContainerV2(11,4,0,0,"Bereitgestellte Ausrüstung",{["allow"] = "none", ["infinite"] = "true",["isEquipment"] = false}))
+    ARMORY:Add(createContainerV2(4,4,BoxSize * 11+BoxSize/2,0,"Zurücklegen",{["isEquipment"] = false,["isBin"] = true}))
     return ARMORY
 end
 

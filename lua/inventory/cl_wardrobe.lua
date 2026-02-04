@@ -11,7 +11,7 @@ WARDROBE = WARDROBE or nil
 
 function CreateWardrobe()
     WARDROBE = vgui.Create("DPanel", inventoryContainer)
-    WARDROBE:SetSize(0,5 * BoxSize + 8 + BoxSize /2 )
+    WARDROBE:SetSize(0,5 * BoxSize + BoxSize/10 + BoxSize /2 )
     WARDROBE:SetPos(0,0)
     WARDROBE:SetName("InventoryPassivePanel")
     WARDROBE:DockMargin(2,2,2,2)
@@ -23,7 +23,7 @@ function CreateWardrobe()
             local label = vgui.Create("DLabel")
             label:SetText("Toggle "..(i + j*4 +1) .. " on")
             SetLabelSize(label, BoxSize/2)
-            label:SetPos(BoxSize*i*4+BoxSize+8,BoxSize*j*3/2+BoxSize/1.5)
+            label:SetPos(BoxSize*i*4+BoxSize+BoxSize/10,BoxSize*j*3/2+BoxSize/1.5)
             WARDROBE:Add(label)
         end
     end

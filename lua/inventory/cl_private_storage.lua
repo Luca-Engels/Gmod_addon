@@ -11,14 +11,12 @@ PRIVATE_STORAGE = PRIVATE_STORAGE or nil
 
 function CreatePrivateStorage()
     PRIVATE_STORAGE = vgui.Create("DPanel", inventoryContainer)
-    PRIVATE_STORAGE:SetSize(0,5 * BoxSize + 8 + BoxSize /2 )
+    PRIVATE_STORAGE:SetSize(0,5 * BoxSize + BoxSize/10 + BoxSize /2 )
     PRIVATE_STORAGE:SetPos(0,0)
     PRIVATE_STORAGE:SetName("InventoryPassivePanel")
-    PRIVATE_STORAGE:DockMargin(2,2,2,2)
-    PRIVATE_STORAGE:DockPadding(2,2,2,2)
     PRIVATE_STORAGE:SetBackgroundColor(Color(0,0,0,0))
     local ScrollPane = vgui.Create("DScrollPanel", PRIVATE_STORAGE)
-    ScrollPane:AddItem(createContainerV2(16,8,BoxSize/2,0,"Privat Lager"))
+    ScrollPane:AddItem(createContainerV2(15,8,0,0,"Privat Lager"))
     ScrollPane:Dock(FILL)
     return PRIVATE_STORAGE
 end

@@ -37,14 +37,13 @@ function CreateWeaponChest()
     WEAPON_CHEST.GUI.MAIN:SetPos(scrw/2-winw/2, scrh/2+BoxSize)
     inventoryContainer = vgui.Create("DPanel",WEAPON_CHEST.GUI.MAIN)
     inventoryContainer:Dock(FILL)
-    inventoryContainer:DockPadding(4,4,4,4)
-    inventoryContainer:SetBackgroundColor(Color(0,0,0,0))
+    inventoryContainer:DockPadding(BoxSize/20,BoxSize/20,BoxSize/20,BoxSize/20)
     inventoryContainer.Paint = function(self, w, h)
         
-        surface.SetDrawColor(50,50,50,100)
+        surface.SetDrawColor(0,0,0,0)
         surface.DrawRect(0, 0, w, h)
         surface.SetDrawColor(255,255,255)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
+        surface.DrawOutlinedRect(0, 0, w, h, BoxSize/20)
     end
     
 
@@ -52,7 +51,7 @@ function CreateWeaponChest()
     sheet:Dock(FILL)
     sheet.Paint = function(self, w, h)
         surface.SetDrawColor(0,0,0,0)
-        surface.DrawRect(h, 0, w, h)
+        surface.DrawRect(0, 0, w, h)
     end
     local InventorySheet = getActiveInventoryPanel("Ausrüstung",CreateArmory(),sheet)
     local InventorySheet = getActiveInventoryPanel("Kleiderschrank",CreateWardrobe(),sheet)
@@ -73,8 +72,8 @@ function SetLabelSize(label, size)
     label:SetFont(name)
     label:SizeToContents()
     label:SetSize(
-        label:GetWide() + 8,
-        label:GetTall() + 8
+        label:GetWide() + BoxSize/10,
+        label:GetTall() + BoxSize/10
     )
 end
 
@@ -160,7 +159,7 @@ function createContainerV2(x,y,posX,posY,Name,options)
         surface.SetDrawColor(50, 50, 50, 150)
         surface.DrawRect(0, 0, w, h)
         surface.SetDrawColor(255, 255, 255)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
+        surface.DrawOutlinedRect(0, 0, w, h, BoxSize/20)
     end
     
     local Text = vgui.Create("DLabel",container)
@@ -170,7 +169,7 @@ function createContainerV2(x,y,posX,posY,Name,options)
     Text:SetText(Name)
     SetLabelSize(Text, BoxSize*2/4)
     Text:SetSize(BoxSize*x, BoxSize*y)
-    Text:SetPos(0,5)
+    Text:SetPos(0,BoxSize/20)
     Text:Dock(TOP)
     Text:SetContentAlignment(8)
 
@@ -197,7 +196,7 @@ function createContainerV2(x,y,posX,posY,Name,options)
                 surface.SetDrawColor(0, 0, 0, 0)
                 surface.DrawRect(0, 0, w, h)
                 surface.SetDrawColor(255, 255, 255)
-                surface.DrawOutlinedRect(0, 0, w+1, h+1, 1)
+                surface.DrawOutlinedRect(0, 0, w+BoxSize/80, h+BoxSize/80, BoxSize/20)
             end
             dragContainer:Add(dropContainer)
         end
@@ -232,7 +231,7 @@ function CreateDropItem(Name, itemInfo)
         Item = vgui.Create("DModelPanel", Item)
         Item.PaintOver = function(self, w, h)
             surface.SetDrawColor(255, 255, 255)
-            surface.DrawOutlinedRect(0, 0, w, h, 2)
+            surface.DrawOutlinedRect(0, 0, w, h, BoxSize/20)
         end
 
         Item:SetModel(itemInfo.Model_Route)
@@ -317,26 +316,26 @@ function highlightAcceptingType(allowType)
                 end
                 dropPanel.PaintOver = function(self, w, h)
                     surface.SetDrawColor(255, 255, 255)
-                    surface.DrawOutlinedRect(1, 1, w+1, h+1, 1)
+                    surface.DrawOutlinedRect(BoxSize/80, BoxSize/80, w+BoxSize/80, h+BoxSize/80, BoxSize/20)
                 end
             else
                 if panelAllowType == allowType or panelAllowType == nil then
                     dropPanel:GetParent().PaintOver = function(self, w, h)
                         surface.SetDrawColor(0, 255, 42)
-                        surface.DrawOutlinedRect(-1, -1, w+1, h+1, 3)
+                        surface.DrawOutlinedRect(-BoxSize/80, -BoxSize/80, w+BoxSize/80, h+BoxSize/80, BoxSize/10)
                     end
                     dropPanel.PaintOver = function(self, w, h)
                         surface.SetDrawColor(255, 255, 255)
-                        surface.DrawOutlinedRect(1, 1, w+1, h+1, 1)
+                        surface.DrawOutlinedRect(BoxSize/80, BoxSize/80, w+BoxSize/80, h+BoxSize/80, BoxSize/20)
                     end
                 else
                     dropPanel:GetParent().PaintOver = function(self, w, h)
                         surface.SetDrawColor(255, 0, 0)
-                        surface.DrawOutlinedRect(-1, -1, w+1, h+1, 3)
+                        surface.DrawOutlinedRect(-BoxSize/80, -BoxSize/80, w+BoxSize/80, h+BoxSize/80, BoxSize/10)
                     end
                     dropPanel.PaintOver = function(self, w, h)
                         surface.SetDrawColor(255, 255, 255)
-                        surface.DrawOutlinedRect(1, 1, w+1, h+1, 1)
+                        surface.DrawOutlinedRect(BoxSize/80, BoxSize/80, w+BoxSize/80, h+BoxSize/80, BoxSize/20)
                     end
                 end
             end
@@ -351,11 +350,11 @@ local function createButtonPanel(text,parent)
     button:SetTextColor(Color(255,255,255))
     button:Dock(LEFT)
 
-    SetLabelSize(button, BoxSize*2/4)
+    SetLabelSize(button, BoxSize/2)
     button.Paint = function(self, w, h)
         draw.RoundedBox(0, 0, 0, w, h, Color(0, 0, 0, 0))
         surface.SetDrawColor(255, 255, 255)
-        surface.DrawOutlinedRect(0, 0, w, h, 2)
+        surface.DrawOutlinedRect(0, 0, w, h, BoxSize/20)
     end
     button.DoClick = function()
         switchActiveInventoryPanel(text)
@@ -364,18 +363,19 @@ local function createButtonPanel(text,parent)
 end
 function getActiveInventoryPanel(name,panel,sheet)
     local sheetTable = sheet:AddSheet(name, panel)
-    sheetTable.Panel:SetY(BoxSize)
+    sheetTable.Panel:SetPos(BoxSize/2,BoxSize)
+    print(sheetTable.Panel:GetPos())
     sheetTable.Tab.Paint = function(self, w, h)
         if self:IsActive()then 
             surface.SetDrawColor(255, 0, 0, 0)
             surface.DrawRect(0, 0, w, h)
             surface.SetDrawColor(255, 255, 255)
-            surface.DrawOutlinedRect(0, 0, w, h*2, 2)
+            surface.DrawOutlinedRect(0, 0, w, h*2, BoxSize/20)
         else
             surface.SetDrawColor(50, 50, 50, 150)
             surface.DrawRect(0, 0, w, h)
             surface.SetDrawColor(255, 255, 255)
-            surface.DrawOutlinedRect(0, 0, w, h, 2)
+            surface.DrawOutlinedRect(0, 0, w, h, BoxSize/20)
         end
     end
     SetLabelSize(sheetTable.Tab, BoxSize*2/4)

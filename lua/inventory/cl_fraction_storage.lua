@@ -11,14 +11,12 @@ FRACTION_STORAGE = FRACTION_STORAGE or nil
 
 function CreateFractionStorage()
     FRACTION_STORAGE = vgui.Create("DPanel", inventoryContainer)
-    FRACTION_STORAGE:SetSize(0,5 * BoxSize + 8 + BoxSize /2 )
+    FRACTION_STORAGE:SetSize(0,5 * BoxSize + BoxSize/10 + BoxSize /2 )
     FRACTION_STORAGE:SetPos(0,0)
     FRACTION_STORAGE:SetName("InventoryPassivePanel")
-    FRACTION_STORAGE:DockMargin(2,2,2,2)
-    FRACTION_STORAGE:DockPadding(2,2,2,2)
     FRACTION_STORAGE:SetBackgroundColor(Color(0,0,0,0))
     local ScrollPane = vgui.Create("DScrollPanel", FRACTION_STORAGE)
-    ScrollPane:AddItem(createContainerV2(16,16,BoxSize/2,0,"Fraktions Lager"))
+    ScrollPane:AddItem(createContainerV2(15,15,0,0,"Fraktions Lager"))
     ScrollPane:Dock(FILL)
     return FRACTION_STORAGE
 end
