@@ -35,7 +35,6 @@ end
 
 function DropEvent(InventoryHover, PickedUpItem,wasDropped,index,cursorx,cursory,doEquip)
     local xBox, yBox = PickedUpItem:GetSize()
-    BoxSize = math.floor(INVENTORY.SETTINGS.BOXSIZE)
 
     xBox, yBox = xBox / BoxSize, yBox / BoxSize
     xBox, yBox = math.floor(xBox), math.floor(yBox)

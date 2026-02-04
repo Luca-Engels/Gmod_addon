@@ -1,12 +1,7 @@
 
-local scrw, scrh = ScrW(), ScrH()
-local winw, winh = scrw * 0.6, scrh * 0.5
-local InvX, InvY = 10,1
-local BoxSize = (winw * 0.7 / 10) - 10
-
 INVENTORY = INVENTORY or {
     GUI = {
-        ALL = vgui.Create("DPanel"),
+        ALL =nil,
         MAIN = nil,
         INVENTORY = nil,
         MODEL = nil
@@ -30,14 +25,13 @@ INVENTORY = INVENTORY or {
     ITEMS = {}
 }
 INVENTORY.ITEMS = INVENTORY.ITEMS or {}
-INVENTORY.GUI.ALL = INVENTORY.GUI.ALL or vgui.Create("DPanel")
 
 AddCSLuaFile("cl_inventory_drop_event.lua")
 AddCSLuaFile("cl_inventory_helper.lua")
 
 function CreateInventory()
     MsgC(Color(0,255,0),"__ Creating Inventory __\n")
-    print(INVENTORY.GUI.ALL)
+    print("BoxSize: "..BoxSize  )
     INVENTORY.GUI.ALL = vgui.Create("DPanel")
     INVENTORY.GUI.ALL:SetSize(scrw, scrh)
     INVENTORY.GUI.ALL:Center()

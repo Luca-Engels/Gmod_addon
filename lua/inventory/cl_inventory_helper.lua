@@ -2,17 +2,63 @@
 scrw, scrh = ScrW(), ScrH()
 winw, winh = scrw * 0.6, scrh * 0.5
 InvX, InvY = 10,1
-BoxSize = (winw * 0.7 / 10) - 10
+BoxSize = (winh * 0.7 / 5.4)
 local ContainerIndex = 0
 local ItemIndex = 0
 function HexToRGB(hex)
     hex = hex:gsub("#", "")
-
+    
     local r = tonumber(hex:sub(1, 2), 16)
     local g = tonumber(hex:sub(3, 4), 16)
     local b = tonumber(hex:sub(5, 6), 16)
-
+    
     return r, g, b
+end
+
+
+WEAPON_CHEST = WEAPON_CHEST or {
+    GUI = {
+        MAIN = nil, 
+        ARMORY = nil,
+    }
+}
+
+function CreateWeaponChest()
+    
+    MsgC(Color(0,255,0),"__  Opening Weapon Chest __\n")
+    INVENTORY.GUI.MAIN:SetPos(scrw/2-winw/2,BoxSize/2)
+    WEAPON_CHEST.GUI.MAIN = vgui.Create("DPanel",INVENTORY.GUI.ALL)
+
+    WEAPON_CHEST.GUI.MAIN:SetSize(winw, winh-3*BoxSize/2)
+    WEAPON_CHEST.GUI.MAIN:Center()
+    WEAPON_CHEST.GUI.MAIN:MakePopup()
+    WEAPON_CHEST.GUI.MAIN:SetVisible(true)
+    WEAPON_CHEST.GUI.MAIN:SetBackgroundColor(Color(0,0,0,0))
+    WEAPON_CHEST.GUI.MAIN:SetPos(scrw/2-winw/2, scrh/2+BoxSize)
+    inventoryContainer = vgui.Create("DPanel",WEAPON_CHEST.GUI.MAIN)
+    inventoryContainer:Dock(FILL)
+    inventoryContainer:DockPadding(4,4,4,4)
+    inventoryContainer:SetBackgroundColor(Color(0,0,0,0))
+    inventoryContainer.Paint = function(self, w, h)
+        
+        surface.SetDrawColor(50,50,50,100)
+        surface.DrawRect(0, 0, w, h)
+        surface.SetDrawColor(255,255,255)
+        surface.DrawOutlinedRect(0, 0, w, h, 2)
+    end
+    
+
+    local sheet = vgui.Create("DPropertySheet", inventoryContainer)
+    sheet:Dock(FILL)
+    sheet.Paint = function(self, w, h)
+        surface.SetDrawColor(0,0,0,0)
+        surface.DrawRect(h, 0, w, h)
+    end
+    local InventorySheet = getActiveInventoryPanel("Ausrüstung",CreateArmory(),sheet)
+    local InventorySheet = getActiveInventoryPanel("Kleiderschrank",CreateWardrobe(),sheet)
+    local InventorySheet = getActiveInventoryPanel("Privates Lager",CreatePrivateStorage(),sheet)
+    local InventorySheet = getActiveInventoryPanel("Fraktions Lager",CreateFractionStorage(),sheet)
+    -- InventorySheet:SetVisible(false)
 end
 
 function SetLabelSize(label, size)
@@ -40,7 +86,6 @@ function changeSizes(toPut, x, y, PickedUpItem)
     local width = PickedUpItem:GetParent():GetCookie("SizeX")
     local height = PickedUpItem:GetParent():GetCookie("SizeY")
     local allDropIns = PickedUpItem:GetParent():GetParent():GetChildren()
-    print(PickedUpItem:GetParent():GetParent():GetName() .. " has " .. #allDropIns .. " dropins.")
     if #allDropIns == width * height then
         for k, v in pairs(allDropIns) do
             if #v:GetChildren() == 1 and v:GetChildren()[1] == PickedUpItem then
@@ -99,7 +144,6 @@ function createContainerV2(x,y,posX,posY,Name,options)
         isBin = options["isBin"]
     end
 
-    local box = vgui.Create("DPanel")
     local container = vgui.Create("DPanel")
     container:SetSize(BoxSize*x, BoxSize*y+ BoxSize/2)
     container:SetPos(posX, posY)
@@ -184,7 +228,6 @@ end
 
 function CreateDropItem(Name, itemInfo)
     local Item = nil
-    PrintTable(itemInfo)
     if(itemInfo.Type == "Armor") then
         Item = vgui.Create("DModelPanel", Item)
         Item.PaintOver = function(self, w, h)
@@ -301,22 +344,6 @@ function highlightAcceptingType(allowType)
     end
 end
 
-local function switchActiveInventoryPanel(panelName)
-    INVENTORY.GUI.MAIN:SetPos(scrw/2-winw/2,0)
-    if WEAPON_CHEST.GUI.MAIN and WEAPON_CHEST.GUI.MAIN:IsValid() then
-        WEAPON_CHEST.GUI.MAIN:Remove()
-    end
-
-    if panelName == "Waffenkiste" then
-        CreateWeaponChest()
-    elseif panelName == "Kleiderschrank" then
-        CreateWardrobe()
-    elseif panelName == "Spieler Lager" then
-        CreatePlayerStorage()
-    elseif panelName == "Fraktions Lager" then
-        CreateFractionStorage()
-    end
-end
 
 local function createButtonPanel(text,parent)
     local button = vgui.Create("DButton", parent)
@@ -335,52 +362,29 @@ local function createButtonPanel(text,parent)
     end
     return button
 end
-function getActiveInventoryPanel(activePanel, parent)
-
-    local panel = vgui.Create("DPanel", parent)
-    panel:SetBackgroundColor(Color(0,0,0,0))
-
-    -- Container for buttons
-    local buttonHolder = vgui.Create("DPanel", panel)
-    buttonHolder:SetBackgroundColor(Color(0,0,0,0))
-    buttonHolder:Dock(TOP)
-    buttonHolder:SetTall(BoxSize)
-    buttonHolder.PerformLayout = function(self)
-        local w = 0
-
-        for _, child in ipairs(self:GetChildren()) do
-            w = w + child:GetWide()
+function getActiveInventoryPanel(name,panel,sheet)
+    local sheetTable = sheet:AddSheet(name, panel)
+    sheetTable.Panel:SetY(BoxSize)
+    sheetTable.Tab.Paint = function(self, w, h)
+        if self:IsActive()then 
+            surface.SetDrawColor(255, 0, 0, 0)
+            surface.DrawRect(0, 0, w, h)
+            surface.SetDrawColor(255, 255, 255)
+            surface.DrawOutlinedRect(0, 0, w, h*2, 2)
+        else
+            surface.SetDrawColor(50, 50, 50, 150)
+            surface.DrawRect(0, 0, w, h)
+            surface.SetDrawColor(255, 255, 255)
+            surface.DrawOutlinedRect(0, 0, w, h, 2)
         end
-
-        self:SetWide(w)
-
-        -- Center horizontally
-        self:CenterHorizontal()
     end
-    local weaponPanel = createButtonPanel("Waffenkiste", buttonHolder)
-    local wardrobePanel = createButtonPanel("Kleiderschrank", buttonHolder)
-    local playerStoragePanel = createButtonPanel("Spieler Lager", buttonHolder)
-    local fractionStoragePanel = createButtonPanel("Fraktions Lager", buttonHolder)
-
-
-    if activePanel == "WeaponChest" then
-        weaponPanel:SetDisabled(true)
-        weaponPanel:SetTextColor(Color(150,150,150))
-
-        weaponPanel.Paint = function(self, w, h)
-            surface.SetDrawColor(35, 35, 35)
-            surface.DrawOutlinedRect(0, 0, w, h, 4)
-        end
-    elseif activePanel == "Wardrobe" then
-        wardrobePanel:SetDisabled(true)
-    elseif activePanel == "PlayerStorage" then
-        playerStoragePanel:SetDisabled(true)
-    elseif activePanel == "FractionStorage" then
-        fractionStoragePanel:SetDisabled(true)
+    SetLabelSize(sheetTable.Tab, BoxSize*2/4)
+    function sheetTable.Tab:GetTabHeight()
+        return BoxSize/1.5
     end
-
-
-    return panel
+    PrintTable(sheetTable)
+    sheetTable.Panel:SetVisible(false)
+    return sheet
 end
 
 

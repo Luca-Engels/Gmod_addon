@@ -7,8 +7,8 @@ if SERVER then
     util.AddNetworkString("RequestInventorySync")
     util.AddNetworkString("RequestInventoryEquip")
     util.AddNetworkString("requestLoadInventoryToLocal")
-    util.AddNetworkString("WeaponChestAdd")
-    util.AddNetworkString("RequestWeaponChestSync")
+    util.AddNetworkString("ArmoryAdd")
+    util.AddNetworkString("RequestArmorySync")
 
     function SyncPlayerInventory(ply)
         print("Syncing inventory for player: " .. ply:Nick())
@@ -21,14 +21,14 @@ if SERVER then
             end
         end)
     end
-    function SyncPlayerWeaponChest(ply)
-        print("Syncing WeaponChest for player: " .. ply:Nick())
+    function SyncPlayerArmory(ply)
+        print("Syncing Armory for player: " .. ply:Nick())
         local playerClass = readPlayer(ply)[1]["Faction"]
         local equipment = readClassEntry(playerClass)
         timer.Simple(0, function()
             for k, v in pairs(equipment) do
                 PrintTable(v)
-                net.Start("WeaponChestAdd")
+                net.Start("ArmoryAdd")
                 net.WriteTable(v)
                 net.Send(ply)
             end
@@ -37,8 +37,8 @@ if SERVER then
     net.Receive("RequestInventorySync", function(len, ply)
         SyncPlayerInventory(ply)
     end)
-    net.Receive("RequestWeaponChestSync", function(len, ply)
-        SyncPlayerWeaponChest(ply)
+    net.Receive("RequestArmorySync", function(len, ply)
+        SyncPlayerArmory(ply)
     end)
 
     -- hook.Add("PlayerInitialSpawn", "LoadInventory", function(ply)
@@ -129,9 +129,9 @@ if CLIENT then
         AddToInventory(inventory)
     end)
 
-    net.Receive("WeaponChestAdd", function()
+    net.Receive("ArmoryAdd", function()
         local item = net.ReadTable()
-        AddToWeaponChest(item)
+        AddToArmory(item)
     end)
     net.Receive("InventoryModelChange", function()
         model = net.ReadString()
@@ -153,8 +153,8 @@ if CLIENT then
         net.SendToServer()
     end
     
-    function RequestWeaponChestSync()
-        net.Start("RequestWeaponChestSync")
+    function RequestArmorySync()
+        net.Start("RequestArmorySync")
         net.SendToServer()
     end
 

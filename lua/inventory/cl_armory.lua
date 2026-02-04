@@ -5,33 +5,23 @@ local ContainerIndex = 0
 
 
 
-AddCSLuaFile("cl_inventory_gui.lua")
+ARMORY = ARMORY or nil
 
-WARDROBE = WARDROBE or nil
-
-function CreateWardrobe()
-    WARDROBE = vgui.Create("DPanel", inventoryContainer)
-    WARDROBE:SetSize(0,5 * BoxSize + 8 + BoxSize /2 )
-    WARDROBE:SetPos(0,0)
-    WARDROBE:SetName("InventoryPassivePanel")
-    WARDROBE:DockMargin(2,2,2,2)
-    WARDROBE:DockPadding(2,2,2,2)
-    WARDROBE:SetBackgroundColor(Color(0,0,0,0))
-    for i = 0, 3 do
-        for j = 0, 2 do
-            WARDROBE:Add(createContainerV2(1,1,BoxSize*i*4,BoxSize*j*3/2,"",{["allow"] = "none", ["infinite"] = "true",["isEquipment"] = false}))
-            local label = vgui.Create("DLabel")
-            label:SetText("Toggle "..(i + j*4 +1) .. " on")
-            SetLabelSize(label, BoxSize/2)
-            label:SetPos(BoxSize*i*4+BoxSize+8,BoxSize*j*3/2+BoxSize/1.5)
-            WARDROBE:Add(label)
-        end
-    end
-    return WARDROBE
+function CreateArmory()
+    ARMORY = vgui.Create("DPanel")
+    ARMORY:SetSize(0,1 * BoxSize + 8 + BoxSize /2 )
+    ARMORY:SetPos(0,0)
+    ARMORY:SetName("InventoryPassivePanel")
+    ARMORY:DockMargin(2,2,2,2)
+    ARMORY:DockPadding(2,2,2,2)
+    ARMORY:SetBackgroundColor(Color(0,0,0,0))
+    ARMORY:Add(createContainerV2(11,4,BoxSize/2,0,"Bereitgestellte Ausrüstung",{["allow"] = "none", ["infinite"] = "true",["isEquipment"] = false}))
+    ARMORY:Add(createContainerV2(4,4,BoxSize * 12,0,"Zurücklegen",{["isEquipment"] = false,["isBin"] = true}))
+    return ARMORY
 end
 
 
-function AddToWardrobe(item)
+function AddToArmory(item)
     local itemInfo = InventoryItems[item.Item_ID]
     if itemInfo then
         local Size = tonumber(itemInfo.Size )
@@ -40,8 +30,8 @@ function AddToWardrobe(item)
             itemInfo
         )
         local x,y = getSizeXY(Size)
-        for i = 0, #WARDROBE:GetChild(0):GetChild(0):GetChildren()-1 do
-            local inventoryhover = WARDROBE:GetChild(0):GetChild(0):GetChild(i)
+        for i = 0, #ARMORY:GetChild(0):GetChild(0):GetChildren()-1 do
+            local inventoryhover = ARMORY:GetChild(0):GetChild(0):GetChild(i)
             if isDropable(inventoryhover, i, x, y, ItemPanel) then
                 inventoryhover:Add(ItemPanel)
                 changeSizes(inventoryhover, x, y, ItemPanel)
@@ -54,7 +44,7 @@ function AddToWardrobe(item)
 end
 
 concommand.Add(
-    "invWardrobe",
+    "invWeaponBox",
     function()
         if(INVENTORY.GUI.ALL and INVENTORY.GUI.ALL:IsValid()) then
             -- INVENTORY.GUI.MAIN:Remove()
@@ -64,13 +54,13 @@ concommand.Add(
                 CreateInventory()
             end
             INVENTORY.GUI.ALL:SetVisible(not INVENTORY.GUI.ALL:IsVisible())
-            CreateWardrobe()
-            RequestWeaponChestSync() 
+            CreateWeaponChest()
+            RequestArmorySync() 
             return
         else
             CreateInventory()
-            CreateWardrobe()
-            RequestWeaponChestSync() 
+            CreateWeaponChest()
+            RequestArmorySync() 
         end
         
     end
