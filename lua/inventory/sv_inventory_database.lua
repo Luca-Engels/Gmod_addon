@@ -8,27 +8,30 @@
 function CreateTable()
     sql.Query("CREATE TABLE IF NOT EXISTS player_data (SteamID TEXT PRIMARY KEY, Faction TEXT)")
     sql.Query("CREATE TABLE IF NOT EXISTS item_data (Item_ID TEXT, Item_Name TEXT, Size INTEGER, Color_HEX VARCHAR(7), Ammo INTEGER, PRIMARY KEY (Item_ID))")
-    sql.Query("CREATE TABLE IF NOT EXISTS player_inventory (SteamID TEXT, Item_ID TEXT, Amount INTEGER,Active INTEGER, PRIMARY KEY (SteamID, Item_ID))")
-    sql.Query("CREATE TABLE IF NOT EXISTS class_inventory (classID TEXT, Item_ID TEXT, PRIMARY KEY (classID, Item_ID))")
+    -- id = SteamID or classID or fractionID
+    -- type = "player_inventory", "armory_storage", "fraction_storage" , "player_storage"
+    sql.Query("CREATE TABLE IF NOT EXISTS storage (id TEXT, Item_ID TEXT, AMOUNT INTEGER, StorageType TEXT, PRIMARY KEY (id, Item_ID))")
+    sql.Query("CREATE TABLE IF NOT EXISTS fraction_classes (fractionID TEXT, classID TEXT, PRIMARY KEY (fractionID, classID))")
 end
 
 function ReadTable()
     local playerData = sql.Query("SELECT * FROM player_data")
     local itemData = sql.Query("SELECT * FROM item_data")
-    local playerInventory = sql.Query("SELECT * FROM player_inventory")
-
-    return {
+    local inventory = sql.Query("SELECT * FROM storage")
+    local fractionClasses = sql.Query("SELECT * FROM fraction_classes")
+        return {
         playerData = playerData,
         itemData = itemData,
-        playerInventory = playerInventory
+        fractionClasses = fractionClasses,
+        inventory = inventory
     }
 end
 
 function DeleteTable()
     sql.Query("DROP TABLE IF EXISTS player_data")
     sql.Query("DROP TABLE IF EXISTS item_data")
-    sql.Query("DROP TABLE IF EXISTS player_inventory")
-    sql.Query("DROP TABLE IF EXISTS class_inventory")
+    sql.Query("DROP TABLE IF EXISTS storage")
+    sql.Query("DROP TABLE IF EXISTS fraction_classes")
 end
 
 function CreatePlayer(player, faction)
@@ -118,13 +121,10 @@ function createInventoryEntry(player, itemID, amount)
         updateInventoryEntry(player, itemID, amount + tonumber(inventoryResult[1].Amount),nil)
         return
     end
-    sql.Query("INSERT INTO player_inventory (SteamID, Item_ID, Amount, Active) VALUES ('" .. player:SteamID() .. "', '" .. itemID .. "', " .. amount .. ", 0)")
-    
-
-
+    sql.Query("INSERT INTO storage(id, Item_ID, AMOUNT, StorageType) VALUES ('" .. player:SteamID() .. "', '" .. itemID .. "', " .. amount .. ", 'player_inventory')")
 end
 function readInventory(player)
-    local result = sql.Query("SELECT * FROM player_inventory WHERE SteamID = '" .. player:SteamID() .. "'")
+    local result = sql.Query("SELECT * FROM storage WHERE id = '" .. player:SteamID() .. "' AND StorageType = 'player_inventory'")
     for _, row in ipairs(result) do
         row.Active = tonumber(row.Active) == 1
     end
@@ -135,7 +135,7 @@ function readInventory(player)
     return result
 end
 function readInventoryEntry(player, itemID)
-    local result = sql.Query("SELECT * FROM player_inventory WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
+    local result = sql.Query("SELECT * FROM storage WHERE id = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "' AND StorageType = 'player_inventory'")
     if(not result) then
         ErrorNoHalt("No inventory entry found for SteamID: " .. player:SteamID() .. " and Item_ID: " .. itemID .. "\n")
         return nil
@@ -165,7 +165,7 @@ function updateInventoryEntry(player, itemID, amount, active)
     local activeValue = active and 1 or 0
 
     print(player,itemID,amount,activeValue,result)
-    sql.Query("UPDATE player_inventory SET Amount = " .. amount .. ", Active = " .. activeValue .. " WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
+    sql.Query("UPDATE storage SET Amount = " .. amount .. ", Active = " .. activeValue .. " WHERE id = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "' AND StorageType = 'player_inventory'")
 
 end
 
@@ -176,7 +176,7 @@ function deleteInventoryEntry(player, itemID, amount)
         return
     end
     if (amount < 1) or (tonumber(result[1].Amount) <= amount) then
-        sql.Query("DELETE FROM player_inventory WHERE SteamID = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "'")
+        sql.Query("DELETE FROM storage WHERE id = '" .. player:SteamID() .. "' AND Item_ID = '" .. itemID .. "' AND StorageType = 'player_inventory'")
         SyncPlayerInventory(player)
     else
         updateInventoryEntry(player, itemID, tonumber(result[1].Amount) - amount)
@@ -185,9 +185,9 @@ end
 
 
 function createClassEntry(className,itemID)
-    local result = sql.Query("SELECT * FROM class_inventory WHERE classID = '".. className .."' and itemID = '".. itemID .."'")
+    local result = sql.Query("SELECT * FROM armory_storage WHERE classID = '".. className .."' and itemID = '".. itemID .."'")
     if ( not result ) then
-        sql.Query("INSERT INTO class_inventory (classID, Item_ID) VALUES ('".. className .."','".. itemID .."')")
+        sql.Query("INSERT INTO armory_storage (classID, Item_ID) VALUES ('".. className .."','".. itemID .."')")
         ErrorNoHalt("Entry for " .. className .. " and " .. itemID .. "added\n")
     else 
         ErrorNoHalt("Entry for " .. className .. " and " .. itemID .. "already exists\n")
@@ -196,7 +196,7 @@ end
 
 function readClassEntry(className)
     print(className)
-    local result = sql.Query("Select * from class_inventory WHERE classID = '".. className .."'")
+    local result = sql.Query("Select * from armory_storage WHERE classID = '".. className .."'")
     return result
 end
 
@@ -208,9 +208,28 @@ function deleteClassEntry(className,itemID)
     end
     local result = readClassEntry(className,ItemID)
     if ( not result ) then
-        sql.Query("DELETE FROM class_inventory WHERE classID = '".. className .."' and itemID = '".. itemID .."')")
+        sql.Query("DELETE FROM armory_storage WHERE classID = '".. className .."' and itemID = '".. itemID .."')")
         ErrorNoHalt("Entry for " .. className .. " and " .. itemID .. "removed\n")
     else 
         ErrorNoHalt("No item found with ID: " .. itemID .. "\n")
+    end
+end
+
+
+--  sql.Query("CREATE TABLE IF NOT EXISTS storage (id TEXT, Item_ID TEXT, AMOUNT INTEGER, StorageType TEXT, PRIMARY KEY (id, Item_ID))")
+--  inventory = {["*StorageType*"] = {["*id*"] = {"*Item_ID*","*Amount*"}}, ...}
+
+function AddToInventory(inventory)
+    for storageType, storageData in pairs(inventory) do
+        for id, items in pairs(storageData) do
+            for itemID, amount in pairs(items) do
+                local result = sql.Query("SELECT * FROM storage WHERE id = '" .. id .. "' AND Item_ID = '" .. itemID .. "' AND StorageType = '" .. storageType .. "'")
+                if(result) then
+                    sql.Query("UPDATE storage SET AMOUNT = AMOUNT + " .. amount .. " WHERE id = '" .. id .. "' AND Item_ID = '" .. itemID .. "' AND StorageType = '" .. storageType .. "'")
+                else
+                    sql.Query("INSERT INTO storage (id, Item_ID, AMOUNT, StorageType) VALUES ('" .. id .. "', '" .. itemID .. "', " .. amount .. ", '" .. storageType .. "')")
+                end
+            end
+        end
     end
 end
